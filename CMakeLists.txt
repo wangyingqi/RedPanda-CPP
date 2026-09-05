@@ -335,7 +335,7 @@ elseif(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     if (LUA_ADDON)
         install(
             FILES packages/macos/compiler_hint.lua
-            DESTINATION RedPandaIDE.app/Contents/MacOS)
+            DESTINATION RedPandaIDE.app/Contents/Resources)
     endif()
     # macOS: Windows-compatibility shims (conio.h, pause, cls)
     install(

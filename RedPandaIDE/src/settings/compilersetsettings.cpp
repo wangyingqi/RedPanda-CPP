@@ -1840,8 +1840,14 @@ void CompilerSets::findSets(bool showProgress)
 
 #ifdef ENABLE_LUA_ADDON
     QJsonObject compilerHint;
+    QString compilerHintPath = pSettings->dirs().appLibexecDir() + "/compiler_hint.lua";
+#ifdef Q_OS_MACOS
+    // In a signed .app bundle, non-code files must live under Resources, not MacOS.
+    if (!QFile::exists(compilerHintPath))
+        compilerHintPath = pSettings->dirs().appResourceDir() + "/compiler_hint.lua";
+#endif
     if (
-        QFile scriptFile(pSettings->dirs().appLibexecDir() + "/compiler_hint.lua");
+        QFile scriptFile(compilerHintPath);
         scriptFile.exists() && scriptFile.open(QFile::ReadOnly)
     ) {
         QByteArray script = scriptFile.readAll();
