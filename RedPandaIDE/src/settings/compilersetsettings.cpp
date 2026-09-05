@@ -1063,6 +1063,10 @@ void CompilerSet::setExecutables()
         } else {
             mDebugServer = findProgramInBinDirs(GDB_SERVER_PROGRAM);
         }
+        if (mDebugger.isEmpty()) {
+            mDebugger = findProgramInBinDirs(LLDB_DAP_PROGRAM);
+            mDebugServer.clear();
+        }
         if (mCCompiler.isEmpty())
             mCCompiler =  findProgramInBinDirs(GCC_PROGRAM);
         if (mCppCompiler.isEmpty())
@@ -1078,6 +1082,10 @@ void CompilerSet::setExecutables()
         mCppCompiler = findProgramInBinDirs(GPP_PROGRAM);
         mDebugger = findProgramInBinDirs(GDB_PROGRAM);
         mDebugServer = findProgramInBinDirs(GDB_SERVER_PROGRAM);
+        if (mDebugger.isEmpty()) {
+            mDebugger = findProgramInBinDirs(LLDB_DAP_PROGRAM);
+            mDebugServer.clear();
+        }
     }
     if constexpr (MAKE_INTERFACE == MAKE_INTERFACE_mingw32) {
         mMake = findProgramInBinDirs(MAKE_PROGRAM);
