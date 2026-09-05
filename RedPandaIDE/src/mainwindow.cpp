@@ -8238,10 +8238,19 @@ static void setTabsInDockLocation(QTabWidget* tabs, const Qt::DockWidgetArea &ar
         tabs->setTabPosition(QTabWidget::TabPosition::South);
         break;
     case Qt::DockWidgetArea::LeftDockWidgetArea:
+#ifdef Q_OS_MACOS
+        // Dev-C++ style: horizontal tabs above the side panel
+        tabs->setTabPosition(QTabWidget::TabPosition::North);
+#else
         tabs->setTabPosition(QTabWidget::TabPosition::West);
+#endif
         break;
     case Qt::DockWidgetArea::RightDockWidgetArea:
+#ifdef Q_OS_MACOS
+        tabs->setTabPosition(QTabWidget::TabPosition::North);
+#else
         tabs->setTabPosition(QTabWidget::TabPosition::East);
+#endif
         break;
     default:
         break;

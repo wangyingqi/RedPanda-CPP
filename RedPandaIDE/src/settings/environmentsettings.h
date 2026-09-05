@@ -30,6 +30,7 @@ public:
     };
 
     explicit EnvironmentSettings(SettingsPersistor * persistor, DirSettings *dirSettings);
+    static QString defaultLanguage();
     QString theme() const;
     void setTheme(const QString &theme);
 
