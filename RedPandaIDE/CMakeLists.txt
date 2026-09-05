@@ -17,6 +17,7 @@ target_qt_plain_cpp(RedPandaIDE
     src/compiler/compilerinfo
     # debugger
     src/debugger/dapprotocol
+    src/debugger/daptransport
     src/debugger/gdbmiresultparser
     # parser
     src/parser/cppparser
