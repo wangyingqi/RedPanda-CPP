@@ -1,0 +1,13 @@
+#!/bin/sh
+# Windows "pause" command equivalent, so that system("pause") works on macOS.
+printf '请按任意键继续. . . '
+# read one key silently; fall back to a line read if not a tty
+if [ -t 0 ]; then
+  old=$(stty -g)
+  stty -echo -icanon min 1 time 0
+  dd bs=1 count=1 >/dev/null 2>&1
+  stty "$old"
+else
+  read -r _
+fi
+printf '\n'

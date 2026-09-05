@@ -331,6 +331,17 @@ elseif(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     install(
         FILES README.md NEWS.md LICENSE
         DESTINATION RedPandaIDE.app/Contents/Resources/doc)
+    # macOS: compiler discovery add-on (Homebrew GCC / Apple Clang / lldb-dap)
+    if (LUA_ADDON)
+        install(
+            FILES packages/macos/compiler_hint.lua
+            DESTINATION RedPandaIDE.app/Contents/MacOS)
+    endif()
+    # macOS: Windows-compatibility shims (conio.h, pause, cls)
+    install(
+        DIRECTORY platform/macos/compat
+        DESTINATION RedPandaIDE.app/Contents/Resources
+        USE_SOURCE_PERMISSIONS)
 else()
     message(FATAL_ERROR "Unknown FILESYSTEM_LAYOUT: ${FILESYSTEM_LAYOUT}")
 endif()

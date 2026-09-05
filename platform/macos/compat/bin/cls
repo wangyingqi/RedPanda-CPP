@@ -1,0 +1,3 @@
+#!/bin/sh
+# Windows "cls" command equivalent, so that system("cls") works on macOS.
+printf '\033[2J\033[H'
