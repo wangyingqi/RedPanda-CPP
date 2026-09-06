@@ -374,6 +374,7 @@ int main(int argc, char *argv[])
             setTheme("default");
             pSettings->environment().setIconSet("bluesky");
             pSettings->environment().save();
+            pSettings->editor().setColorScheme("Dev-Cpp Classic");
             pSettings->editor().setDefaultFileCpp(true);
             pSettings->codeCompletion().setShareParser(false);
 #else
