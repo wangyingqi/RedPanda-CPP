@@ -619,8 +619,13 @@ void MainWindow::updateEditorActions(const Editor *e)
 {
     if (mQuitting)
         return;
-    ui->menuCode->menuAction()->setVisible(mEditorManager->pageCount()>0);
+#ifdef Q_OS_MACOS
+    // Dev-C++ 5.11 parity: Edit menu is always present (items enable/disable instead).
+    ui->menuEdit->menuAction()->setVisible(true);
+#else
     ui->menuEdit->menuAction()->setVisible(mEditorManager->pageCount()>0);
+#endif
+    ui->menuCode->menuAction()->setVisible(mEditorManager->pageCount()>0);
     ui->menuSelection->menuAction()->setVisible(mEditorManager->pageCount()>0);
     ui->menuRefactor->menuAction()->setVisible(mEditorManager->pageCount()>0);
 
@@ -817,7 +822,11 @@ void MainWindow::updateEditorActions(const Editor *e)
 void MainWindow::updateProjectActions()
 {
     bool hasProject = (mProject != nullptr);
+#ifdef Q_OS_MACOS
+    ui->menuProject->menuAction()->setVisible(true);
+#else
     ui->menuProject->menuAction()->setVisible(hasProject);
+#endif
 
     ui->actionNew_Template->setEnabled(hasProject);
     ui->actionView_Makefile->setEnabled(hasProject);
@@ -8069,14 +8078,33 @@ void MainWindow::initEditorActions()
 void MainWindow::changeEditorActionParent(QAction *action, const QString& groupName)
 {
     removeAction(action);
+#ifdef Q_OS_MACOS
+    // Do not reparent away on macOS: keep the action owned where it is so it stays
+    // listed in its (permanently populated) menu; only scope its shortcut to the editor.
+    ui->EditorPanel->addAction(action);
+    action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    action->setData(groupName);
+#else
     action->setParent(ui->EditorPanel);
     ui->EditorPanel->addAction(action);
     action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     action->setData(groupName);
+#endif
 }
 
 void MainWindow::backupMenuForEditor(QMenu *menu, QList<QAction *> &backup)
 {
+#ifdef Q_OS_MACOS
+    // The native macOS menu bar cannot lazily populate empty menus via aboutToShow,
+    // so keep these menus permanently filled. Editor actions are still reparented to
+    // the editor panel so their shortcuts stay editor-scoped, but they remain listed
+    // in the menu (Dev-C++ 5.11 shows Edit/etc. always, enabling/disabling items).
+    foreach (QAction* action, menu->actions()) {
+        if (!action->objectName().isEmpty())
+            changeEditorActionParent(action, menu->title());
+        backup.append(action);
+    }
+#else
     foreach (QAction* action, menu->actions()) {
         if (!action->objectName().isEmpty())
             changeEditorActionParent(action, menu->title());
@@ -8101,6 +8129,7 @@ void MainWindow::backupMenuForEditor(QMenu *menu, QList<QAction *> &backup)
             [menu] {
         menu->clear();
     });
+#endif
 }
 
 void MainWindow::validateCompilerSet(int index)
