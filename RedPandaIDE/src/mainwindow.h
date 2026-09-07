@@ -963,6 +963,7 @@ private:
     QList<PStatement> mClassNavClasses;   // parallel to class combo items (index 0 == globals, null)
     QList<PStatement> mClassNavMembers;   // parallel to member combo items
     bool mClassNavUpdating = false;
+    bool mStarterProblemSetLoaded = false;
 #endif
     std::shared_ptr<QHash<StatementKind, std::shared_ptr<ColorSchemeItem> > > mStatementColors;
     SymbolUsageManager *mSymbolUsageManager;

@@ -404,6 +404,18 @@ MainWindow::MainWindow(QWidget *parent)
         QString filename=dir.filePath(DEV_PROBLEM_SET_FILE);
         if (fileExists(filename))
             mOJProblemSetModel->loadFromFile(filename,false,currentIndex);
+#ifdef Q_OS_MACOS
+        else {
+            // First run: preload the bundled beginner practice set (由简入深) so the
+            // problem-set panel is not empty out of the box.
+            QString starter = includeTrailingPathDelimiter(pSettings->dirs().appResourceDir())
+                              + "starter_problemset.json";
+            if (fileExists(starter)) {
+                mOJProblemSetModel->loadFromFile(starter,false,currentIndex);
+                mStarterProblemSetLoaded = true;   // show the panel at the end of setup
+            }
+        }
+#endif
         if (currentIndex>=0) {
             QModelIndex index = mOJProblemSetModel->index(currentIndex,0);
             ui->lstProblemSet->setCurrentIndex(index);
@@ -543,6 +555,14 @@ MainWindow::MainWindow(QWidget *parent)
     updateShortcuts();
     updateEditorSettings();
     //updateEditorBookmarks();
+#ifdef Q_OS_MACOS
+    if (mStarterProblemSetLoaded) {
+        // Defer until the event loop starts so it wins over any saved-tab restore.
+        QTimer::singleShot(0, this, [this]{
+            ui->tabExplorer->setCurrentWidget(ui->tabProblemSet);
+        });
+    }
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -1683,7 +1703,6 @@ void MainWindow::applyDevCppLayout()
     setPanelTab(ui->tabExplorer, ui->tabStructure, tr("Classes"));
     setPanelTab(ui->tabExplorer, ui->tabWatch, tr("Debug"));
     hidePanelTab(ui->tabExplorer, ui->tabFiles);
-    hidePanelTab(ui->tabExplorer, ui->tabProblemSet);
     // reorder to Project, Classes, Debug
     {
         QTabWidget* t = ui->tabExplorer;
@@ -1705,7 +1724,6 @@ void MainWindow::applyDevCppLayout()
     setPanelTab(ui->tabMessages, ui->tabSearch, tr("Find Results"));
     hidePanelTab(ui->tabMessages, ui->tabTODO);
     hidePanelTab(ui->tabMessages, ui->tabBookmark);
-    hidePanelTab(ui->tabMessages, ui->tabProblem);
     // keep snapshots in sync so show/hide toggles preserve the new labels
     for (int i=0;i<ui->tabExplorer->count();i++) {
         QWidget* w = ui->tabExplorer->widget(i);

@@ -639,12 +639,7 @@ void UISettings::doLoad()
     mShowWatch = boolValue("show_watch",true);
     mShowStructure = boolValue("show_structure",true);
     mShowFiles = boolValue("show_file",true);
-#ifdef Q_OS_MACOS
-    // Dev-C++ style: the competitive-programming problem set panel is hidden by default
-    mShowProblemSet = boolValue("show_problem_set",false);
-#else
     mShowProblemSet = boolValue("show_problem_set",true);
-#endif
 
     mShowIssues = boolValue("show_issues",true);
     mShowCompileLog = boolValue("show_compile_log",true);
