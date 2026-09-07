@@ -167,7 +167,9 @@ public:
     void updateDebugEval(const QString& value);
     void rebuildOpenedFileHisotryMenu();
     void updateClassBrowserForEditor(Editor* editor);
+    QString devCppIssuesLabel() const;
 #ifdef Q_OS_MACOS
+    void applyDevCppLayout();
     void setupClassFunctionNav();
     void updateClassFunctionNav(Editor* editor);
     void fillClassNavMembers(const PStatement& classStatement, Editor* editor);

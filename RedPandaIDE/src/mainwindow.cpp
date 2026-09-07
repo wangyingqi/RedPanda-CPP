@@ -532,6 +532,9 @@ MainWindow::MainWindow(QWidget *parent)
     //applySettings();
     applyUISettings();
     initDocks();
+#ifdef Q_OS_MACOS
+    applyDevCppLayout();
+#endif
     updateProjectView();
     updateEditorActions();
     updateCaretActions();
@@ -1655,7 +1658,65 @@ void MainWindow::rebuildOpenedFileHisotryMenu()
 
 }
 
+QString MainWindow::devCppIssuesLabel() const
+{
 #ifdef Q_OS_MACOS
+    return tr("Compiler");   // Dev-C++ 5.11 names the compile-messages tab "Compiler"
+#else
+    return tr("Issues");
+#endif
+}
+
+#ifdef Q_OS_MACOS
+static void setPanelTab(QTabWidget* tabs, QWidget* page, const QString& text) {
+    int i = tabs->indexOf(page);
+    if (i>=0) tabs->setTabText(i, text);
+}
+static void hidePanelTab(QTabWidget* tabs, QWidget* page) {
+    int i = tabs->indexOf(page);
+    if (i>=0) tabs->setTabVisible(i, false);
+}
+void MainWindow::applyDevCppLayout()
+{
+    // Left explorer panel -> Dev-C++ 5.11: Project / Classes / Debug
+    setPanelTab(ui->tabExplorer, ui->tabProject, tr("Project"));
+    setPanelTab(ui->tabExplorer, ui->tabStructure, tr("Classes"));
+    setPanelTab(ui->tabExplorer, ui->tabWatch, tr("Debug"));
+    hidePanelTab(ui->tabExplorer, ui->tabFiles);
+    hidePanelTab(ui->tabExplorer, ui->tabProblemSet);
+    // reorder to Project, Classes, Debug
+    {
+        QTabWidget* t = ui->tabExplorer;
+        auto moveTo = [t](QWidget* w, int pos){
+            int i = t->indexOf(w);
+            if (i<0) return;
+            QString txt = t->tabText(i); QIcon ic = t->tabIcon(i); bool vis = t->isTabVisible(i);
+            t->removeTab(i);
+            t->insertTab(pos, w, ic, txt);
+            t->setTabVisible(pos, vis);
+        };
+        moveTo(ui->tabProject, 0);
+        moveTo(ui->tabStructure, 1);
+        moveTo(ui->tabWatch, 2);
+    }
+    // Bottom messages panel -> Dev-C++ 5.11: Compiler / Compile Log / Debug / Find Results
+    setPanelTab(ui->tabMessages, ui->tabIssues, tr("Compiler"));
+    setPanelTab(ui->tabMessages, ui->tabToolsOutput, tr("Compile Log"));
+    setPanelTab(ui->tabMessages, ui->tabSearch, tr("Find Results"));
+    hidePanelTab(ui->tabMessages, ui->tabTODO);
+    hidePanelTab(ui->tabMessages, ui->tabBookmark);
+    hidePanelTab(ui->tabMessages, ui->tabProblem);
+    // keep snapshots in sync so show/hide toggles preserve the new labels
+    for (int i=0;i<ui->tabExplorer->count();i++) {
+        QWidget* w = ui->tabExplorer->widget(i);
+        if (mTabInfosData.contains(w)) mTabInfosData[w]->text = ui->tabExplorer->tabText(i);
+    }
+    for (int i=0;i<ui->tabMessages->count();i++) {
+        QWidget* w = ui->tabMessages->widget(i);
+        if (mTabMessagesData.contains(w)) mTabMessagesData[w]->text = ui->tabMessages->tabText(i);
+    }
+}
+
 void MainWindow::setupClassFunctionNav()
 {
     mClassNavBar = new QToolBar(tr("Class Browser"), this);
@@ -6311,17 +6372,17 @@ void MainWindow::onCompileFinished(QString filename, bool isCheckSyntax)
     if (i!=-1) {
         if (isCheckSyntax) {
             if (mCompilerManager->syntaxCheckIssueCount()>0) {
-                ui->tabMessages->setTabText(i, tr("Issues") +
+                ui->tabMessages->setTabText(i, devCppIssuesLabel() +
                                     QString(" (%1)").arg(mCompilerManager->syntaxCheckIssueCount()));
             } else {
-                ui->tabMessages->setTabText(i, tr("Issues"));
+                ui->tabMessages->setTabText(i, devCppIssuesLabel());
             }
         } else {
             if (mCompilerManager->compileIssueCount()>0) {
-                ui->tabMessages->setTabText(i, tr("Issues") +
+                ui->tabMessages->setTabText(i, devCppIssuesLabel() +
                                     QString(" (%1)").arg(mCompilerManager->compileIssueCount()));
             } else {
-                ui->tabMessages->setTabText(i, tr("Issues"));
+                ui->tabMessages->setTabText(i, devCppIssuesLabel());
             }
         }
     }
@@ -8736,7 +8797,7 @@ void MainWindow::clearIssues()
 {
     int i = ui->tabMessages->indexOf(ui->tabIssues);
     if (i!=-1) {
-        ui->tabMessages->setTabText(i, tr("Issues"));
+        ui->tabMessages->setTabText(i, devCppIssuesLabel());
     }
     ui->tableIssues->clearIssues();
     mCompileIssuesState = CompileIssuesState::None;
