@@ -170,6 +170,7 @@ public:
     QString devCppIssuesLabel() const;
 #ifdef Q_OS_MACOS
     void applyDevCppLayout();
+    void applyDevCppToolbarLabels();
     void setupClassFunctionNav();
     void updateClassFunctionNav(Editor* editor);
     void fillClassNavMembers(const PStatement& classStatement, Editor* editor);

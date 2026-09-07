@@ -1717,6 +1717,26 @@ void MainWindow::applyDevCppLayout()
     }
 }
 
+void MainWindow::applyDevCppToolbarLabels()
+{
+    auto label = [](QToolBar* tb){
+        for (QAction* a : tb->actions()) {
+            if (a->isSeparator())
+                continue;
+            QString t = a->text();
+            t.remove('&');
+            if (t.isEmpty())
+                continue;
+            QString sc = a->shortcut().toString(QKeySequence::NativeText);
+            a->setIconText(sc.isEmpty() ? t : (t + "\n" + sc));
+        }
+    };
+    label(ui->toolbarMain);
+    label(ui->toolbarCode);
+    label(ui->toolbarCompile);
+    label(ui->toolbarDebug);
+}
+
 void MainWindow::setupClassFunctionNav()
 {
     mClassNavBar = new QToolBar(tr("Class Browser"), this);
@@ -2314,6 +2334,18 @@ void MainWindow::updateActionIcons()
     ui->toolbarCompile->setIconSize(iconSize);
     ui->toolbarDebug->setIconSize(iconSize);
     ui->toolbarCompilerSet->setIconSize(iconSize);
+#ifdef Q_OS_MACOS
+    // Dev-C++/beginner friendly: larger buttons with the command name + shortcut beneath
+    {
+        int barSize = qMax(size, 32);
+        QSize barIconSize(barSize, barSize);
+        for (QToolBar* tb : {ui->toolbarMain, ui->toolbarCode, ui->toolbarCompile, ui->toolbarDebug}) {
+            tb->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+            tb->setIconSize(barIconSize);
+        }
+        applyDevCppToolbarLabels();
+    }
+#endif
     foreach (QToolButton* btn, mClassBrowserToolbar->findChildren<QToolButton *>()) {
         btn->setIconSize(iconSize);
     }
