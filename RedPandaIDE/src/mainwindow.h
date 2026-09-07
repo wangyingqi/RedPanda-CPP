@@ -167,6 +167,11 @@ public:
     void updateDebugEval(const QString& value);
     void rebuildOpenedFileHisotryMenu();
     void updateClassBrowserForEditor(Editor* editor);
+#ifdef Q_OS_MACOS
+    void setupClassFunctionNav();
+    void updateClassFunctionNav(Editor* editor);
+    void fillClassNavMembers(const PStatement& classStatement, Editor* editor);
+#endif
     void resetAutoSaveTimer();
     void updateShortcuts();
     bool saveLastOpens();
@@ -947,6 +952,15 @@ private:
     BookmarkModel *mBookmarkModel;
     SearchResultTreeViewDelegate *mSearchViewDelegate;
     ClassBrowserModel *mClassBrowserModel;
+#ifdef Q_OS_MACOS
+    // Dev-C++ 5.11 style class/function navigation bar above the editor
+    QToolBar *mClassNavBar = nullptr;
+    QComboBox *mClassNavClassCombo = nullptr;
+    QComboBox *mClassNavMemberCombo = nullptr;
+    QList<PStatement> mClassNavClasses;   // parallel to class combo items (index 0 == globals, null)
+    QList<PStatement> mClassNavMembers;   // parallel to member combo items
+    bool mClassNavUpdating = false;
+#endif
     std::shared_ptr<QHash<StatementKind, std::shared_ptr<ColorSchemeItem> > > mStatementColors;
     SymbolUsageManager *mSymbolUsageManager;
     CodeSnippetsManager *mCodeSnippetManager;

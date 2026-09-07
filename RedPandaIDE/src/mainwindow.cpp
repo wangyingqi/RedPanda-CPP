@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QComboBox>
+#include <QToolBar>
 #include <QDesktopServices>
 #include <QDragEnterEvent>
 #include <QFileDialog>
@@ -525,6 +526,9 @@ MainWindow::MainWindow(QWidget *parent)
     buildContextMenus();
     updateAppTitle();
     initEditorActions();
+#ifdef Q_OS_MACOS
+    setupClassFunctionNav();
+#endif
     //applySettings();
     applyUISettings();
     initDocks();
@@ -1332,6 +1336,9 @@ void MainWindow::onDebugFinished()
 void MainWindow::refreshInfosForEditor(Editor *e)
 {
     updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
     updateAppTitle(e);
     updateEditorActions(e);
     updateForEncodingInfo(e);
@@ -1647,6 +1654,131 @@ void MainWindow::rebuildOpenedFileHisotryMenu()
     }
 
 }
+
+#ifdef Q_OS_MACOS
+void MainWindow::setupClassFunctionNav()
+{
+    mClassNavBar = new QToolBar(tr("Class Browser"), this);
+    mClassNavBar->setObjectName("toolbarClassNav");
+    mClassNavBar->setMovable(false);
+    mClassNavBar->setFloatable(false);
+    mClassNavClassCombo = new QComboBox(mClassNavBar);
+    mClassNavMemberCombo = new QComboBox(mClassNavBar);
+    mClassNavClassCombo->setMinimumWidth(220);
+    mClassNavMemberCombo->setMinimumWidth(320);
+    mClassNavClassCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    mClassNavMemberCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    mClassNavBar->addWidget(mClassNavClassCombo);
+    mClassNavBar->addWidget(mClassNavMemberCombo);
+    // own row beneath the main toolbars, like classic Dev-C++
+    addToolBarBreak(Qt::TopToolBarArea);
+    addToolBar(Qt::TopToolBarArea, mClassNavBar);
+
+    connect(mClassNavClassCombo, QOverload<int>::of(&QComboBox::activated), this,
+            [this](int idx){
+        if (mClassNavUpdating)
+            return;
+        Editor *e = mEditorManager->getEditor();
+        PStatement cls = (idx>=0 && idx<mClassNavClasses.size()) ? mClassNavClasses[idx] : PStatement();
+        fillClassNavMembers(cls, e);
+    });
+    connect(mClassNavMemberCombo, QOverload<int>::of(&QComboBox::activated), this,
+            [this](int idx){
+        if (mClassNavUpdating)
+            return;
+        if (idx<0 || idx>=mClassNavMembers.size())
+            return;
+        PStatement statement = mClassNavMembers[idx];
+        if (!statement)
+            return;
+        QString filename = statement->definitionFileName.isEmpty() ? statement->fileName : statement->definitionFileName;
+        int line = statement->definitionLine>0 ? statement->definitionLine : statement->line;
+        Editor* ed = openFile(filename);
+        if (ed)
+            mEditorManager->activeEditorAndSetCaret(ed, QSynedit::CharPos{0, line});
+    });
+}
+
+void MainWindow::fillClassNavMembers(const PStatement& classStatement, Editor* editor)
+{
+    if (!mClassNavMemberCombo)
+        return;
+    mClassNavUpdating = true;
+    mClassNavMemberCombo->clear();
+    mClassNavMembers.clear();
+    static const QSet<StatementKind> funcKinds{
+        StatementKind::Function, StatementKind::Constructor, StatementKind::Destructor,
+        StatementKind::OverloadedOperator, StatementKind::GlobalVariable, StatementKind::Variable};
+    if (editor && editor->parser()) {
+        PCppParser parser = editor->parser();
+        QString file = editor->filename();
+        parser->freeze();
+        const StatementMap& src = classStatement ? classStatement->children
+                                                  : parser->statementList().childrenStatements();
+        QList<PStatement> members;
+        for (const PStatement& child : src) {
+            if (!child) continue;
+            if (!funcKinds.contains(child->kind)) continue;
+            if (child->fileName!=file && child->definitionFileName!=file) continue;
+            members.append(child);
+        }
+        parser->unFreeze();
+        std::sort(members.begin(), members.end(), [](const PStatement&a, const PStatement&b){
+            int la = a->definitionLine>0?a->definitionLine:a->line;
+            int lb = b->definitionLine>0?b->definitionLine:b->line;
+            return la<lb;
+        });
+        for (const PStatement& m : members) {
+            QString label = m->command + m->args;
+            mClassNavMembers.append(m);
+            mClassNavMemberCombo->addItem(label);
+        }
+    }
+    mClassNavUpdating = false;
+}
+
+void MainWindow::updateClassFunctionNav(Editor* editor)
+{
+    if (mQuitting || !mClassNavClassCombo)
+        return;
+    mClassNavUpdating = true;
+    mClassNavClassCombo->clear();
+    mClassNavClasses.clear();
+    // index 0: globals
+    mClassNavClassCombo->addItem(tr("(globals)"));
+    mClassNavClasses.append(PStatement());
+    static const QSet<StatementKind> classKinds{
+        StatementKind::Class, StatementKind::Namespace, StatementKind::EnumClassType,
+        StatementKind::EnumType};
+    bool enabled = false;
+    if (editor && editor->parser()) {
+        enabled = true;
+        PCppParser parser = editor->parser();
+        QString file = editor->filename();
+        parser->freeze();
+        QList<PStatement> classes;
+        for (const PStatement& child : parser->statementList().childrenStatements()) {
+            if (!child) continue;
+            if (!classKinds.contains(child->kind)) continue;
+            if (child->fileName!=file && child->definitionFileName!=file) continue;
+            classes.append(child);
+        }
+        parser->unFreeze();
+        std::sort(classes.begin(), classes.end(), [](const PStatement&a, const PStatement&b){
+            return a->command < b->command; });
+        for (const PStatement& c : classes) {
+            mClassNavClassCombo->addItem(c->command);
+            mClassNavClasses.append(c);
+        }
+    }
+    mClassNavClassCombo->setEnabled(enabled);
+    mClassNavMemberCombo->setEnabled(enabled);
+    // default to globals view
+    mClassNavUpdating = false;
+    fillClassNavMembers(PStatement(), editor);
+}
+
+#endif
 
 void MainWindow::updateClassBrowserForEditor(Editor *editor)
 {
@@ -2000,6 +2132,9 @@ void MainWindow::openProject(QString filename, bool openFiles)
     updateAppTitle();
     updateCompilerSet();
     updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
     mClassBrowserModel->endUpdate();
     if (oldEditor)
         mEditorManager->closeEditor(oldEditor);
@@ -5594,6 +5729,9 @@ void MainWindow::closeProject(bool refreshEditor)
             ui->tabExplorer->setCurrentWidget(ui->tabStructure);
             Editor * e = mEditorManager->getEditor();
             updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
         } else {
             mClassBrowserModel->setParser(nullptr);
             mClassBrowserModel->setCurrentFile("");
@@ -7422,6 +7560,9 @@ void MainWindow::on_actionNew_Project_triggered()
         updateProjectView();
         Editor* editor = mEditorManager->getEditor();
         updateClassBrowserForEditor(editor);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(editor);
+#endif
         if (editor) {
             PProjectUnit unit=mProject->findUnit(editor);
             if (unit) {
