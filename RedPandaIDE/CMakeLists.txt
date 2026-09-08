@@ -382,7 +382,9 @@ endif()
 
 if(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     set_target_properties(RedPandaIDE PROPERTIES
-        MACOSX_BUNDLE ON)
+        MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_BUNDLE_NAME "RONGHONG-IMO-CPP"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "net.ronghong.imo.cpp")
     set(MACOSX_BUNDLE_ICON_FILE RedPandaIDE.icns)
     set_source_files_properties(
         ${CMAKE_SOURCE_DIR}/platform/macos/RedPandaIDE.icns

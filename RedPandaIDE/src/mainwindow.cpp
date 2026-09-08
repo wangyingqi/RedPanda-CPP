@@ -1506,7 +1506,7 @@ void MainWindow::updateAppTitle(const Editor *e)
 {
     if (mQuitting)
         return;
-    QString appName=tr("Red Panda C++");
+    QString appName=QStringLiteral("RONGHONG-IMO-CPP");
 #ifdef APP_VERSION_SUFFIX
     appName += tr(" %1 Version").arg(APP_VERSION_SUFFIX);
 #endif
