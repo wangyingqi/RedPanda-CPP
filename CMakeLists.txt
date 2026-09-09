@@ -26,6 +26,7 @@ option(LUA_ADDON "Enable Lua add-ons" OFF)
 option(SDCC "Enable SDCC compiler support" ON)
 option(VCS "Enable Git integration" OFF)
 option(WINDOWS_PREFER_OPENCONSOLE "Prefer OpenConsole.exe as terminal emulator" OFF)
+option(BUILD_UNIT_TESTS "Build unit tests" OFF)
 
 if (WIN32)
     set(FILESYSTEM_LAYOUT_DEFAULT flat)
@@ -264,6 +265,10 @@ if (OVERRIDE_MALLOC)
 endif()
 
 add_subdirectory(RedPandaIDE)
+if(BUILD_UNIT_TESTS)
+    enable_testing()
+    add_subdirectory(tests/unit)
+endif()
 if (LUA_ADDON)
     add_subdirectory(libs/lua)
 endif()
@@ -326,6 +331,21 @@ elseif(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     install(
         FILES README.md NEWS.md LICENSE
         DESTINATION RedPandaIDE.app/Contents/Resources/doc)
+    # macOS: compiler discovery add-on (Homebrew GCC / Apple Clang / lldb-dap)
+    if (LUA_ADDON)
+        install(
+            FILES packages/macos/compiler_hint.lua
+            DESTINATION RedPandaIDE.app/Contents/Resources)
+    endif()
+    # macOS: Windows-compatibility shims (conio.h, pause, cls)
+    install(
+        DIRECTORY platform/macos/compat
+        DESTINATION RedPandaIDE.app/Contents/Resources
+        USE_SOURCE_PERMISSIONS)
+    # macOS: bundled beginner practice problem set (loaded on first run)
+    install(
+        FILES platform/macos/starter_problemset.json
+        DESTINATION RedPandaIDE.app/Contents/Resources)
 else()
     message(FATAL_ERROR "Unknown FILESYSTEM_LAYOUT: ${FILESYSTEM_LAYOUT}")
 endif()

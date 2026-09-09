@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QComboBox>
+#include <QToolBar>
 #include <QDesktopServices>
 #include <QDragEnterEvent>
 #include <QFileDialog>
@@ -403,6 +404,18 @@ MainWindow::MainWindow(QWidget *parent)
         QString filename=dir.filePath(DEV_PROBLEM_SET_FILE);
         if (fileExists(filename))
             mOJProblemSetModel->loadFromFile(filename,false,currentIndex);
+#ifdef Q_OS_MACOS
+        else {
+            // First run: preload the bundled beginner practice set (由简入深) so the
+            // problem-set panel is not empty out of the box.
+            QString starter = includeTrailingPathDelimiter(pSettings->dirs().appResourceDir())
+                              + "starter_problemset.json";
+            if (fileExists(starter)) {
+                mOJProblemSetModel->loadFromFile(starter,false,currentIndex);
+                mStarterProblemSetLoaded = true;   // show the panel at the end of setup
+            }
+        }
+#endif
         if (currentIndex>=0) {
             QModelIndex index = mOJProblemSetModel->index(currentIndex,0);
             ui->lstProblemSet->setCurrentIndex(index);
@@ -525,9 +538,15 @@ MainWindow::MainWindow(QWidget *parent)
     buildContextMenus();
     updateAppTitle();
     initEditorActions();
+#ifdef Q_OS_MACOS
+    setupClassFunctionNav();
+#endif
     //applySettings();
     applyUISettings();
     initDocks();
+#ifdef Q_OS_MACOS
+    applyDevCppLayout();
+#endif
     updateProjectView();
     updateEditorActions();
     updateCaretActions();
@@ -536,6 +555,14 @@ MainWindow::MainWindow(QWidget *parent)
     updateShortcuts();
     updateEditorSettings();
     //updateEditorBookmarks();
+#ifdef Q_OS_MACOS
+    if (mStarterProblemSetLoaded) {
+        // Defer until the event loop starts so it wins over any saved-tab restore.
+        QTimer::singleShot(0, this, [this]{
+            ui->tabExplorer->setCurrentWidget(ui->tabProblemSet);
+        });
+    }
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -619,8 +646,13 @@ void MainWindow::updateEditorActions(const Editor *e)
 {
     if (mQuitting)
         return;
-    ui->menuCode->menuAction()->setVisible(mEditorManager->pageCount()>0);
+#ifdef Q_OS_MACOS
+    // Dev-C++ 5.11 parity: Edit menu is always present (items enable/disable instead).
+    ui->menuEdit->menuAction()->setVisible(true);
+#else
     ui->menuEdit->menuAction()->setVisible(mEditorManager->pageCount()>0);
+#endif
+    ui->menuCode->menuAction()->setVisible(mEditorManager->pageCount()>0);
     ui->menuSelection->menuAction()->setVisible(mEditorManager->pageCount()>0);
     ui->menuRefactor->menuAction()->setVisible(mEditorManager->pageCount()>0);
 
@@ -817,7 +849,11 @@ void MainWindow::updateEditorActions(const Editor *e)
 void MainWindow::updateProjectActions()
 {
     bool hasProject = (mProject != nullptr);
+#ifdef Q_OS_MACOS
+    ui->menuProject->menuAction()->setVisible(true);
+#else
     ui->menuProject->menuAction()->setVisible(hasProject);
+#endif
 
     ui->actionNew_Template->setEnabled(hasProject);
     ui->actionView_Makefile->setEnabled(hasProject);
@@ -1323,6 +1359,9 @@ void MainWindow::onDebugFinished()
 void MainWindow::refreshInfosForEditor(Editor *e)
 {
     updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
     updateAppTitle(e);
     updateEditorActions(e);
     updateForEncodingInfo(e);
@@ -1467,10 +1506,7 @@ void MainWindow::updateAppTitle(const Editor *e)
 {
     if (mQuitting)
         return;
-    QString appName=tr("Red Panda C++");
-#ifdef APP_VERSION_SUFFIX
-    appName += tr(" %1 Version").arg(APP_VERSION_SUFFIX);
-#endif
+    QString appName=QStringLiteral("容闳CPP");
     QCoreApplication *app = QApplication::instance();
     if (e && !e->inProject()) {
         QString str;
@@ -1480,22 +1516,22 @@ void MainWindow::updateAppTitle(const Editor *e)
           str = e->filename();
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Debugging"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Debugging"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Running"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Running"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Compiling"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Compiling"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             this->setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,REDPANDA_CPP_VERSION));
+                                 .arg(str,appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
@@ -1512,24 +1548,24 @@ void MainWindow::updateAppTitle(const Editor *e)
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Debugging"),appName,REDPANDA_CPP_VERSION));
+                                tr("Debugging"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Running"),appName,REDPANDA_CPP_VERSION));
+                                tr("Running"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Compiling"),appName,REDPANDA_CPP_VERSION));
+                                tr("Compiling"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,REDPANDA_CPP_VERSION));
+                                 .arg(str,appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
@@ -1541,27 +1577,27 @@ void MainWindow::updateAppTitle(const Editor *e)
             str = mProject->name();
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Debugging"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Debugging"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Running"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Running"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Compiling"),appName,REDPANDA_CPP_VERSION));
+                           .arg(str,tr("Compiling"),appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             this->setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,REDPANDA_CPP_VERSION));
+                                 .arg(str,appName,RHCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
     } else {
-        setWindowTitle(QString("%1 %2").arg(appName,REDPANDA_CPP_VERSION));
+        setWindowTitle(QString("%1 %2").arg(appName,RHCPP_VERSION));
         app->setApplicationName(QString("%1").arg(appName));
     }
 }
@@ -1638,6 +1674,207 @@ void MainWindow::rebuildOpenedFileHisotryMenu()
     }
 
 }
+
+QString MainWindow::devCppIssuesLabel() const
+{
+#ifdef Q_OS_MACOS
+    return tr("Compiler");   // Dev-C++ 5.11 names the compile-messages tab "Compiler"
+#else
+    return tr("Issues");
+#endif
+}
+
+#ifdef Q_OS_MACOS
+static void setPanelTab(QTabWidget* tabs, QWidget* page, const QString& text) {
+    int i = tabs->indexOf(page);
+    if (i>=0) tabs->setTabText(i, text);
+}
+static void hidePanelTab(QTabWidget* tabs, QWidget* page) {
+    int i = tabs->indexOf(page);
+    if (i>=0) tabs->setTabVisible(i, false);
+}
+void MainWindow::applyDevCppLayout()
+{
+    // Left explorer panel -> Dev-C++ 5.11: Project / Classes / Debug
+    setPanelTab(ui->tabExplorer, ui->tabProject, tr("Project"));
+    setPanelTab(ui->tabExplorer, ui->tabStructure, tr("Classes"));
+    setPanelTab(ui->tabExplorer, ui->tabWatch, tr("Debug"));
+    hidePanelTab(ui->tabExplorer, ui->tabFiles);
+    // reorder to Project, Classes, Debug
+    {
+        QTabWidget* t = ui->tabExplorer;
+        auto moveTo = [t](QWidget* w, int pos){
+            int i = t->indexOf(w);
+            if (i<0) return;
+            QString txt = t->tabText(i); QIcon ic = t->tabIcon(i); bool vis = t->isTabVisible(i);
+            t->removeTab(i);
+            t->insertTab(pos, w, ic, txt);
+            t->setTabVisible(pos, vis);
+        };
+        moveTo(ui->tabProject, 0);
+        moveTo(ui->tabStructure, 1);
+        moveTo(ui->tabWatch, 2);
+    }
+    // Bottom messages panel -> Dev-C++ 5.11: Compiler / Compile Log / Debug / Find Results
+    setPanelTab(ui->tabMessages, ui->tabIssues, tr("Compiler"));
+    setPanelTab(ui->tabMessages, ui->tabToolsOutput, tr("Compile Log"));
+    setPanelTab(ui->tabMessages, ui->tabSearch, tr("Find Results"));
+    hidePanelTab(ui->tabMessages, ui->tabTODO);
+    hidePanelTab(ui->tabMessages, ui->tabBookmark);
+    // keep snapshots in sync so show/hide toggles preserve the new labels
+    for (int i=0;i<ui->tabExplorer->count();i++) {
+        QWidget* w = ui->tabExplorer->widget(i);
+        if (mTabInfosData.contains(w)) mTabInfosData[w]->text = ui->tabExplorer->tabText(i);
+    }
+    for (int i=0;i<ui->tabMessages->count();i++) {
+        QWidget* w = ui->tabMessages->widget(i);
+        if (mTabMessagesData.contains(w)) mTabMessagesData[w]->text = ui->tabMessages->tabText(i);
+    }
+}
+
+void MainWindow::applyDevCppToolbarLabels()
+{
+    auto label = [](QToolBar* tb){
+        for (QAction* a : tb->actions()) {
+            if (a->isSeparator())
+                continue;
+            QString t = a->text();
+            t.remove('&');
+            if (t.isEmpty())
+                continue;
+            QString sc = a->shortcut().toString(QKeySequence::NativeText);
+            a->setIconText(sc.isEmpty() ? t : (t + "\n" + sc));
+        }
+    };
+    label(ui->toolbarMain);
+    label(ui->toolbarCode);
+    label(ui->toolbarCompile);
+    label(ui->toolbarDebug);
+}
+
+void MainWindow::setupClassFunctionNav()
+{
+    mClassNavBar = new QToolBar(tr("Class Browser"), this);
+    mClassNavBar->setObjectName("toolbarClassNav");
+    mClassNavBar->setMovable(false);
+    mClassNavBar->setFloatable(false);
+    mClassNavClassCombo = new QComboBox(mClassNavBar);
+    mClassNavMemberCombo = new QComboBox(mClassNavBar);
+    mClassNavClassCombo->setMinimumWidth(220);
+    mClassNavMemberCombo->setMinimumWidth(320);
+    mClassNavClassCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    mClassNavMemberCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    mClassNavBar->addWidget(mClassNavClassCombo);
+    mClassNavBar->addWidget(mClassNavMemberCombo);
+    // own row beneath the main toolbars, like classic Dev-C++
+    addToolBarBreak(Qt::TopToolBarArea);
+    addToolBar(Qt::TopToolBarArea, mClassNavBar);
+
+    connect(mClassNavClassCombo, QOverload<int>::of(&QComboBox::activated), this,
+            [this](int idx){
+        if (mClassNavUpdating)
+            return;
+        Editor *e = mEditorManager->getEditor();
+        PStatement cls = (idx>=0 && idx<mClassNavClasses.size()) ? mClassNavClasses[idx] : PStatement();
+        fillClassNavMembers(cls, e);
+    });
+    connect(mClassNavMemberCombo, QOverload<int>::of(&QComboBox::activated), this,
+            [this](int idx){
+        if (mClassNavUpdating)
+            return;
+        if (idx<0 || idx>=mClassNavMembers.size())
+            return;
+        PStatement statement = mClassNavMembers[idx];
+        if (!statement)
+            return;
+        QString filename = statement->definitionFileName.isEmpty() ? statement->fileName : statement->definitionFileName;
+        int line = statement->definitionLine>0 ? statement->definitionLine : statement->line;
+        Editor* ed = openFile(filename);
+        if (ed)
+            mEditorManager->activeEditorAndSetCaret(ed, QSynedit::CharPos{0, line});
+    });
+}
+
+void MainWindow::fillClassNavMembers(const PStatement& classStatement, Editor* editor)
+{
+    if (!mClassNavMemberCombo)
+        return;
+    mClassNavUpdating = true;
+    mClassNavMemberCombo->clear();
+    mClassNavMembers.clear();
+    static const QSet<StatementKind> funcKinds{
+        StatementKind::Function, StatementKind::Constructor, StatementKind::Destructor,
+        StatementKind::OverloadedOperator, StatementKind::GlobalVariable, StatementKind::Variable};
+    if (editor && editor->parser()) {
+        PCppParser parser = editor->parser();
+        QString file = editor->filename();
+        parser->freeze();
+        const StatementMap& src = classStatement ? classStatement->children
+                                                  : parser->statementList().childrenStatements();
+        QList<PStatement> members;
+        for (const PStatement& child : src) {
+            if (!child) continue;
+            if (!funcKinds.contains(child->kind)) continue;
+            if (child->fileName!=file && child->definitionFileName!=file) continue;
+            members.append(child);
+        }
+        parser->unFreeze();
+        std::sort(members.begin(), members.end(), [](const PStatement&a, const PStatement&b){
+            int la = a->definitionLine>0?a->definitionLine:a->line;
+            int lb = b->definitionLine>0?b->definitionLine:b->line;
+            return la<lb;
+        });
+        for (const PStatement& m : members) {
+            QString label = m->command + m->args;
+            mClassNavMembers.append(m);
+            mClassNavMemberCombo->addItem(label);
+        }
+    }
+    mClassNavUpdating = false;
+}
+
+void MainWindow::updateClassFunctionNav(Editor* editor)
+{
+    if (mQuitting || !mClassNavClassCombo)
+        return;
+    mClassNavUpdating = true;
+    mClassNavClassCombo->clear();
+    mClassNavClasses.clear();
+    // index 0: globals
+    mClassNavClassCombo->addItem(tr("(globals)"));
+    mClassNavClasses.append(PStatement());
+    static const QSet<StatementKind> classKinds{
+        StatementKind::Class, StatementKind::Namespace, StatementKind::EnumClassType,
+        StatementKind::EnumType};
+    bool enabled = false;
+    if (editor && editor->parser()) {
+        enabled = true;
+        PCppParser parser = editor->parser();
+        QString file = editor->filename();
+        parser->freeze();
+        QList<PStatement> classes;
+        for (const PStatement& child : parser->statementList().childrenStatements()) {
+            if (!child) continue;
+            if (!classKinds.contains(child->kind)) continue;
+            if (child->fileName!=file && child->definitionFileName!=file) continue;
+            classes.append(child);
+        }
+        parser->unFreeze();
+        std::sort(classes.begin(), classes.end(), [](const PStatement&a, const PStatement&b){
+            return a->command < b->command; });
+        for (const PStatement& c : classes) {
+            mClassNavClassCombo->addItem(c->command);
+            mClassNavClasses.append(c);
+        }
+    }
+    mClassNavClassCombo->setEnabled(enabled);
+    mClassNavMemberCombo->setEnabled(enabled);
+    // default to globals view
+    mClassNavUpdating = false;
+    fillClassNavMembers(PStatement(), editor);
+}
+
+#endif
 
 void MainWindow::updateClassBrowserForEditor(Editor *editor)
 {
@@ -1991,6 +2228,9 @@ void MainWindow::openProject(QString filename, bool openFiles)
     updateAppTitle();
     updateCompilerSet();
     updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
     mClassBrowserModel->endUpdate();
     if (oldEditor)
         mEditorManager->closeEditor(oldEditor);
@@ -2109,6 +2349,18 @@ void MainWindow::updateActionIcons()
     ui->toolbarCompile->setIconSize(iconSize);
     ui->toolbarDebug->setIconSize(iconSize);
     ui->toolbarCompilerSet->setIconSize(iconSize);
+#ifdef Q_OS_MACOS
+    // Dev-C++/beginner friendly: larger buttons with the command name + shortcut beneath
+    {
+        int barSize = qMax(size, 32);
+        QSize barIconSize(barSize, barSize);
+        for (QToolBar* tb : {ui->toolbarMain, ui->toolbarCode, ui->toolbarCompile, ui->toolbarDebug}) {
+            tb->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+            tb->setIconSize(barIconSize);
+        }
+        applyDevCppToolbarLabels();
+    }
+#endif
     foreach (QToolButton* btn, mClassBrowserToolbar->findChildren<QToolButton *>()) {
         btn->setIconSize(iconSize);
     }
@@ -5585,6 +5837,9 @@ void MainWindow::closeProject(bool refreshEditor)
             ui->tabExplorer->setCurrentWidget(ui->tabStructure);
             Editor * e = mEditorManager->getEditor();
             updateClassBrowserForEditor(e);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(e);
+#endif
         } else {
             mClassBrowserModel->setParser(nullptr);
             mClassBrowserModel->setCurrentFile("");
@@ -6164,17 +6419,17 @@ void MainWindow::onCompileFinished(QString filename, bool isCheckSyntax)
     if (i!=-1) {
         if (isCheckSyntax) {
             if (mCompilerManager->syntaxCheckIssueCount()>0) {
-                ui->tabMessages->setTabText(i, tr("Issues") +
+                ui->tabMessages->setTabText(i, devCppIssuesLabel() +
                                     QString(" (%1)").arg(mCompilerManager->syntaxCheckIssueCount()));
             } else {
-                ui->tabMessages->setTabText(i, tr("Issues"));
+                ui->tabMessages->setTabText(i, devCppIssuesLabel());
             }
         } else {
             if (mCompilerManager->compileIssueCount()>0) {
-                ui->tabMessages->setTabText(i, tr("Issues") +
+                ui->tabMessages->setTabText(i, devCppIssuesLabel() +
                                     QString(" (%1)").arg(mCompilerManager->compileIssueCount()));
             } else {
-                ui->tabMessages->setTabText(i, tr("Issues"));
+                ui->tabMessages->setTabText(i, devCppIssuesLabel());
             }
         }
     }
@@ -7413,6 +7668,9 @@ void MainWindow::on_actionNew_Project_triggered()
         updateProjectView();
         Editor* editor = mEditorManager->getEditor();
         updateClassBrowserForEditor(editor);
+#ifdef Q_OS_MACOS
+    updateClassFunctionNav(editor);
+#endif
         if (editor) {
             PProjectUnit unit=mProject->findUnit(editor);
             if (unit) {
@@ -8069,14 +8327,33 @@ void MainWindow::initEditorActions()
 void MainWindow::changeEditorActionParent(QAction *action, const QString& groupName)
 {
     removeAction(action);
+#ifdef Q_OS_MACOS
+    // Do not reparent away on macOS: keep the action owned where it is so it stays
+    // listed in its (permanently populated) menu; only scope its shortcut to the editor.
+    ui->EditorPanel->addAction(action);
+    action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    action->setData(groupName);
+#else
     action->setParent(ui->EditorPanel);
     ui->EditorPanel->addAction(action);
     action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     action->setData(groupName);
+#endif
 }
 
 void MainWindow::backupMenuForEditor(QMenu *menu, QList<QAction *> &backup)
 {
+#ifdef Q_OS_MACOS
+    // The native macOS menu bar cannot lazily populate empty menus via aboutToShow,
+    // so keep these menus permanently filled. Editor actions are still reparented to
+    // the editor panel so their shortcuts stay editor-scoped, but they remain listed
+    // in the menu (Dev-C++ 5.11 shows Edit/etc. always, enabling/disabling items).
+    foreach (QAction* action, menu->actions()) {
+        if (!action->objectName().isEmpty())
+            changeEditorActionParent(action, menu->title());
+        backup.append(action);
+    }
+#else
     foreach (QAction* action, menu->actions()) {
         if (!action->objectName().isEmpty())
             changeEditorActionParent(action, menu->title());
@@ -8101,6 +8378,7 @@ void MainWindow::backupMenuForEditor(QMenu *menu, QList<QAction *> &backup)
             [menu] {
         menu->clear();
     });
+#endif
 }
 
 void MainWindow::validateCompilerSet(int index)
@@ -8238,10 +8516,19 @@ static void setTabsInDockLocation(QTabWidget* tabs, const Qt::DockWidgetArea &ar
         tabs->setTabPosition(QTabWidget::TabPosition::South);
         break;
     case Qt::DockWidgetArea::LeftDockWidgetArea:
+#ifdef Q_OS_MACOS
+        // Dev-C++ style: horizontal tabs above the side panel
+        tabs->setTabPosition(QTabWidget::TabPosition::North);
+#else
         tabs->setTabPosition(QTabWidget::TabPosition::West);
+#endif
         break;
     case Qt::DockWidgetArea::RightDockWidgetArea:
+#ifdef Q_OS_MACOS
+        tabs->setTabPosition(QTabWidget::TabPosition::North);
+#else
         tabs->setTabPosition(QTabWidget::TabPosition::East);
+#endif
         break;
     default:
         break;
@@ -8557,7 +8844,7 @@ void MainWindow::clearIssues()
 {
     int i = ui->tabMessages->indexOf(ui->tabIssues);
     if (i!=-1) {
-        ui->tabMessages->setTabText(i, tr("Issues"));
+        ui->tabMessages->setTabText(i, devCppIssuesLabel());
     }
     ui->tableIssues->clearIssues();
     mCompileIssuesState = CompileIssuesState::None;

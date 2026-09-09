@@ -1,0 +1,392 @@
+{
+  "name": "入门练习题（由简入深）",
+  "current_index": 0,
+  "problems": [
+    {
+      "name": "1. 你好，世界",
+      "url": "",
+      "description": "<h3>你好，世界</h3><p>编写程序，输出一行文字 <code>Hello, World!</code>。这是每个程序员的第一个程序。</p><p><b>输入格式：</b>无。</p><p><b>输出格式：</b>输出一行 <code>Hello, World!</code>。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例",
+          "input": "",
+          "expected": "Hello, World!"
+        }
+      ]
+    },
+    {
+      "name": "2. A + B 问题",
+      "url": "",
+      "description": "<h3>A + B 问题</h3><p>读入两个整数 a 和 b，输出它们的和。</p><p><b>输入格式：</b>一行两个整数 a 和 b，用空格分隔。</p><p><b>输出格式：</b>一个整数，表示 a + b。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "1 2",
+          "expected": "3"
+        },
+        {
+          "name": "样例2",
+          "input": "100 200",
+          "expected": "300"
+        },
+        {
+          "name": "样例3",
+          "input": "-5 5",
+          "expected": "0"
+        }
+      ]
+    },
+    {
+      "name": "3. 三个数之和",
+      "url": "",
+      "description": "<h3>三个数之和</h3><p>读入三个整数，输出它们的和。</p><p><b>输入格式：</b>一行三个整数，用空格分隔。</p><p><b>输出格式：</b>一个整数，表示三数之和。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "1 2 3",
+          "expected": "6"
+        },
+        {
+          "name": "样例2",
+          "input": "10 20 30",
+          "expected": "60"
+        }
+      ]
+    },
+    {
+      "name": "4. 矩形面积",
+      "url": "",
+      "description": "<h3>矩形面积</h3><p>读入矩形的长和宽（都是整数），输出它的面积。</p><p><b>输入格式：</b>一行两个整数：长 和 宽。</p><p><b>输出格式：</b>一个整数，表示面积（长 × 宽）。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "3 4",
+          "expected": "12"
+        },
+        {
+          "name": "样例2",
+          "input": "5 6",
+          "expected": "30"
+        }
+      ]
+    },
+    {
+      "name": "5. 两个数的较大值",
+      "url": "",
+      "description": "<h3>两个数的较大值</h3><p>读入两个整数，输出较大的那个。若相等则输出该数。</p><p><b>输入格式：</b>一行两个整数。</p><p><b>输出格式：</b>一个整数，两数中的较大值。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "3 5",
+          "expected": "5"
+        },
+        {
+          "name": "样例2",
+          "input": "9 2",
+          "expected": "9"
+        },
+        {
+          "name": "样例3",
+          "input": "4 4",
+          "expected": "4"
+        }
+      ]
+    },
+    {
+      "name": "6. 三个数的最大值",
+      "url": "",
+      "description": "<h3>三个数的最大值</h3><p>读入三个整数，输出其中最大的一个。</p><p><b>输入格式：</b>一行三个整数。</p><p><b>输出格式：</b>一个整数，三数中的最大值。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "1 2 3",
+          "expected": "3"
+        },
+        {
+          "name": "样例2",
+          "input": "9 5 7",
+          "expected": "9"
+        },
+        {
+          "name": "样例3",
+          "input": "4 8 6",
+          "expected": "8"
+        }
+      ]
+    },
+    {
+      "name": "7. 奇偶判断",
+      "url": "",
+      "description": "<h3>奇偶判断</h3><p>读入一个整数 n，如果它是偶数输出 <code>even</code>，否则输出 <code>odd</code>。</p><p><b>输入格式：</b>一个整数 n。</p><p><b>输出格式：</b><code>even</code> 或 <code>odd</code>。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "4",
+          "expected": "even"
+        },
+        {
+          "name": "样例2",
+          "input": "7",
+          "expected": "odd"
+        },
+        {
+          "name": "样例3",
+          "input": "0",
+          "expected": "even"
+        }
+      ]
+    },
+    {
+      "name": "8. 成绩等级",
+      "url": "",
+      "description": "<h3>成绩等级</h3><p>读入一个 0~100 的整数分数，按下述规则输出等级：<br>90~100 为 <code>A</code>，80~89 为 <code>B</code>，70~79 为 <code>C</code>，60~69 为 <code>D</code>，60 以下为 <code>E</code>。</p><p><b>输入格式：</b>一个整数分数（0~100）。</p><p><b>输出格式：</b>一个大写字母，表示等级。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "95",
+          "expected": "A"
+        },
+        {
+          "name": "样例2",
+          "input": "82",
+          "expected": "B"
+        },
+        {
+          "name": "样例3",
+          "input": "59",
+          "expected": "E"
+        },
+        {
+          "name": "样例4",
+          "input": "70",
+          "expected": "C"
+        }
+      ]
+    },
+    {
+      "name": "9. 1 到 n 求和",
+      "url": "",
+      "description": "<h3>1 到 n 求和</h3><p>读入一个正整数 n，计算 1 + 2 + … + n 的值。</p><p><b>输入格式：</b>一个正整数 n（1 ≤ n ≤ 10000）。</p><p><b>输出格式：</b>一个整数，表示 1 到 n 的和。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "5",
+          "expected": "15"
+        },
+        {
+          "name": "样例2",
+          "input": "100",
+          "expected": "5050"
+        },
+        {
+          "name": "样例3",
+          "input": "1",
+          "expected": "1"
+        }
+      ]
+    },
+    {
+      "name": "10. 阶乘",
+      "url": "",
+      "description": "<h3>阶乘</h3><p>读入一个正整数 n，计算 n! = 1 × 2 × … × n。保证结果在 int 范围内（n ≤ 12）。</p><p><b>输入格式：</b>一个正整数 n（1 ≤ n ≤ 12）。</p><p><b>输出格式：</b>一个整数，表示 n! 。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "3",
+          "expected": "6"
+        },
+        {
+          "name": "样例2",
+          "input": "5",
+          "expected": "120"
+        },
+        {
+          "name": "样例3",
+          "input": "1",
+          "expected": "1"
+        }
+      ]
+    },
+    {
+      "name": "11. 九九乘法表",
+      "url": "",
+      "description": "<h3>九九乘法表</h3><p>输出标准的九九乘法表。第 i 行有 i 个式子，形如 <code>j*i=积</code>，同一行的式子之间用一个空格分隔。</p><p><b>输入格式：</b>无。</p><p><b>输出格式：</b>九行，第 i 行为 <code>1*i=.. 2*i=.. … i*i=..</code>。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例",
+          "input": "",
+          "expected": "1*1=1\n1*2=2 2*2=4\n1*3=3 2*3=6 3*3=9\n1*4=4 2*4=8 3*4=12 4*4=16\n1*5=5 2*5=10 3*5=15 4*5=20 5*5=25\n1*6=6 2*6=12 3*6=18 4*6=24 5*6=30 6*6=36\n1*7=7 2*7=14 3*7=21 4*7=28 5*7=35 6*7=42 7*7=49\n1*8=8 2*8=16 3*8=24 4*8=32 5*8=40 6*8=48 7*8=56 8*8=64\n1*9=9 2*9=18 3*9=27 4*9=36 5*9=45 6*9=54 7*9=63 8*9=72 9*9=81"
+        }
+      ]
+    },
+    {
+      "name": "12. 判断素数",
+      "url": "",
+      "description": "<h3>判断素数</h3><p>读入一个整数 n（n ≥ 2），判断它是不是素数。是则输出 <code>yes</code>，否则输出 <code>no</code>。素数是只能被 1 和它本身整除的数。</p><p><b>输入格式：</b>一个整数 n（2 ≤ n ≤ 100000）。</p><p><b>输出格式：</b><code>yes</code> 或 <code>no</code>。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "7",
+          "expected": "yes"
+        },
+        {
+          "name": "样例2",
+          "input": "12",
+          "expected": "no"
+        },
+        {
+          "name": "样例3",
+          "input": "2",
+          "expected": "yes"
+        },
+        {
+          "name": "样例4",
+          "input": "97",
+          "expected": "yes"
+        }
+      ]
+    },
+    {
+      "name": "13. 斐波那契数列",
+      "url": "",
+      "description": "<h3>斐波那契数列</h3><p>数列的第 1、2 项都是 1，从第 3 项起，每项等于前两项之和：1, 1, 2, 3, 5, 8, …。读入 n，输出第 n 项。保证结果在 int 范围内。</p><p><b>输入格式：</b>一个正整数 n（1 ≤ n ≤ 45）。</p><p><b>输出格式：</b>一个整数，表示第 n 项。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "1",
+          "expected": "1"
+        },
+        {
+          "name": "样例2",
+          "input": "5",
+          "expected": "5"
+        },
+        {
+          "name": "样例3",
+          "input": "10",
+          "expected": "55"
+        }
+      ]
+    },
+    {
+      "name": "14. 数组求最大值",
+      "url": "",
+      "description": "<h3>数组求最大值</h3><p>先读入一个整数 n，再读入 n 个整数，输出其中的最大值。</p><p><b>输入格式：</b>第一行一个整数 n；第二行 n 个整数，用空格分隔。</p><p><b>输出格式：</b>一个整数，n 个数的最大值。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "5\n3 9 2 7 5",
+          "expected": "9"
+        },
+        {
+          "name": "样例2",
+          "input": "3\n-1 -5 -3",
+          "expected": "-1"
+        }
+      ]
+    },
+    {
+      "name": "15. 字符串反转",
+      "url": "",
+      "description": "<h3>字符串反转</h3><p>读入一个不含空格的字符串，把它倒过来输出。例如 <code>hello</code> 反转为 <code>olleh</code>。</p><p><b>输入格式：</b>一行一个字符串（不含空格）。</p><p><b>输出格式：</b>反转后的字符串。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "hello",
+          "expected": "olleh"
+        },
+        {
+          "name": "样例2",
+          "input": "abcde",
+          "expected": "edcba"
+        },
+        {
+          "name": "样例3",
+          "input": "racecar",
+          "expected": "racecar"
+        }
+      ]
+    },
+    {
+      "name": "16. 从小到大排序",
+      "url": "",
+      "description": "<h3>从小到大排序</h3><p>先读入整数 n，再读入 n 个整数，把它们从小到大排序后输出，数字之间用一个空格分隔。</p><p><b>输入格式：</b>第一行一个整数 n；第二行 n 个整数。</p><p><b>输出格式：</b>一行 n 个整数，从小到大，用空格分隔。</p>",
+      "time_limit": 1000,
+      "time_limit_unit": 1,
+      "memory_limit": 128,
+      "memory_limit_unit": 1,
+      "cases": [
+        {
+          "name": "样例1",
+          "input": "5\n3 1 4 1 5",
+          "expected": "1 1 3 4 5"
+        },
+        {
+          "name": "样例2",
+          "input": "4\n9 8 7 6",
+          "expected": "6 7 8 9"
+        }
+      ]
+    }
+  ]
+}

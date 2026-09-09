@@ -5028,6 +5028,22 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Classes</source>
+        <translation>类</translation>
+    </message>
+    <message>
+        <source>Compiler</source>
+        <translation>编译器</translation>
+    </message>
+    <message>
+        <source>Compile Log</source>
+        <translation>编译日志</translation>
+    </message>
+    <message>
+        <source>Find Results</source>
+        <translation>查找结果</translation>
+    </message>
+    <message>
         <location filename="../src/mainwindow.ui" line="+14"/>
         <location filename="../src/mainwindow.cpp" line="+1470"/>
         <source>Red Panda C++</source>

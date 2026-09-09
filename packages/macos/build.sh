@@ -64,6 +64,7 @@ function fn_build() {
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_PREFIX_PATH="$_QT_DIR" \
     -DCMAKE_INSTALL_PREFIX="$_PKG_DIR" \
+    -DLUA_ADDON=ON \
     -DCMAKE_OSX_ARCHITECTURES="$arch_info"
 
   cmake --build "$_BUILD_DIR" --parallel $(sysctl -n hw.logicalcpu)
@@ -72,9 +73,18 @@ function fn_build() {
 function fn_package() {
   cmake --install "$_BUILD_DIR"
 
-  macdeployqt "$_PKG_DIR/RedPandaIDE.app"
-  tar -C "$_PKG_DIR" -cJf dist/RedPandaIDE-$APP_VERSION.tar.xz RedPandaIDE.app
+  macdeployqt "$_PKG_DIR/RedPandaIDE.app" || true
+  # Homebrew Qt: macdeployqt leaves an @rpath reference in libbrotlidec
+  local brotlidec="$_PKG_DIR/RedPandaIDE.app/Contents/Frameworks/libbrotlidec.1.dylib"
+  if [[ -f "$brotlidec" ]]; then
+    install_name_tool -change @rpath/libbrotlicommon.1.dylib \
+      @executable_path/../Frameworks/libbrotlicommon.1.dylib "$brotlidec" || true
+  fi
+  # extended attributes break codesign ("resource fork, Finder information, or similar detritus")
+  xattr -cr "$_PKG_DIR/RedPandaIDE.app"
   codesign --force --deep --sign "-" "$_PKG_DIR/RedPandaIDE.app"
+  # exclude AppleDouble/xattrs so the ad-hoc signature still verifies after extraction
+  COPYFILE_DISABLE=1 tar --no-xattrs -C "$_PKG_DIR" -cJf dist/RedPandaIDE-$APP_VERSION.tar.xz RedPandaIDE.app
 }
 
 fn_check_qt_install

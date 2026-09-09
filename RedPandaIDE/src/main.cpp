@@ -319,7 +319,11 @@ int main(int argc, char *argv[])
     {
         QSettings languageSetting(settingFilename,QSettings::IniFormat);
         languageSetting.beginGroup(SETTING_ENVIRONMENT);
+#ifdef Q_OS_MACOS
+        language = languageSetting.value("language",EnvironmentSettings::defaultLanguage()).toString();
+#else
         language = languageSetting.value("language",QLocale::system().name()).toString();
+#endif
 
         if (trans.load("RedPandaIDE_"+language,":/i18n/")) {
             app.installTranslator(&trans);
@@ -364,6 +368,16 @@ int main(int argc, char *argv[])
         }
         pSettings->load();
         if (firstRun) {
+#ifdef Q_OS_MACOS
+            // Classic Dev-C++ 5.11 look out of the box: light theme, colourful icons,
+            // C++ as the default file type. No first-run dialog for students.
+            setTheme("default");
+            pSettings->environment().setIconSet("bluesky");
+            pSettings->environment().save();
+            pSettings->editor().setColorScheme("Dev-Cpp Classic");
+            pSettings->editor().setDefaultFileCpp(true);
+            pSettings->codeCompletion().setShareParser(false);
+#else
             //set theme
             ChooseThemeDialog themeDialog;
             themeDialog.setFont(QFont(defaultUiFont(),11));
@@ -389,6 +403,7 @@ int main(int argc, char *argv[])
             } else {
                 pSettings->codeCompletion().setShareParser(false);
             }
+#endif
             pSettings->editor().save();
 
             //auto detect git in path

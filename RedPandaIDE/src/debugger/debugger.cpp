@@ -16,6 +16,7 @@
  */
 #include "debugger.h"
 #include "gdbmidebugger.h"
+#include "dapdebugger.h"
 #include "../utils.h"
 #include "../utils/pe.h"
 #include "../utils/parsearg.h"
@@ -102,12 +103,16 @@ bool Debugger::startClient(int compilerSetIndex,
     }
     setForceUTF8(compilerSet->isDebuggerUsingUTF8());
     setDebugInfosUsingUTF8(compilerSet->isCompilerUsingUTF8());
-    if (compilerSet->debugger().endsWith(LLDB_MI_PROGRAM))
+    if (compilerSet->debugger().endsWith(LLDB_DAP_PROGRAM))
+        setDebuggerType(DebuggerType::DAP);
+    else if (compilerSet->debugger().endsWith(LLDB_MI_PROGRAM))
         setDebuggerType(DebuggerType::LLDB_MI);
     else
         setDebuggerType(DebuggerType::GDB);
     // force to lldb-server if using lldb-mi, which creates new console but does not bind inferior’s stdio to the new console on Windows.
-    setUseDebugServer(pSettings->debugger().useGDBServer() || mDebuggerType == DebuggerType::LLDB_MI);
+    // DAP adapters launch the inferior themselves (runInTerminal), never through a debug server.
+    setUseDebugServer(mDebuggerType != DebuggerType::DAP
+                      && (pSettings->debugger().useGDBServer() || mDebuggerType == DebuggerType::LLDB_MI));
     QString debuggerPath = compilerSet->debugger();
     //QFile debuggerProgram(debuggerPath);
 //    if (!isTextAllAscii(debuggerPath)) {
@@ -161,7 +166,10 @@ bool Debugger::startClient(int compilerSetIndex,
         mTarget->waitStart();
     }
     //delete when thread finished
-    mClient = new GDBMIDebuggerClient(this, debuggerType());
+    if (debuggerType() == DebuggerType::DAP)
+        mClient = new DAPDebuggerClient(this);
+    else
+        mClient = new GDBMIDebuggerClient(this, debuggerType());
     mClient->addBinDirs(binDirs);
     mClient->addBinDir(pSettings->dirs().appDir());
     mClient->setDebuggerPath(debuggerPath);
@@ -389,6 +397,14 @@ void Debugger::runClientCommand(const QString &command, const QString &params, D
     QMutexLocker locker{&mClientMutex};
     if (!mClient)
         return;
+    if (mClient->clientType()==DebuggerType::DAP) {
+        if (source == DebugCommandSource::Console) {
+            DAPDebuggerClient* dapClient = dynamic_cast<DAPDebuggerClient*>(mClient);
+            QString fullCommand = params.isEmpty() ? command : command + " " + params;
+            dapClient->runConsoleCommand(fullCommand);
+        }
+        return;
+    }
     if (mClient->clientType()!=DebuggerType::GDB
             && mClient->clientType()!=DebuggerType::LLDB_MI)
         return;

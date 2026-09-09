@@ -37,15 +37,47 @@ EnvironmentSettings::EnvironmentSettings(SettingsPersistor *persistor, DirSettin
     Q_ASSERT(dirSettings!=nullptr);
 }
 
+QString EnvironmentSettings::defaultLanguage()
+{
+    // QLocale::system().name() yields e.g. "en_CN" for an English UI in China,
+    // which has no translation; students in a Chinese region expect Chinese.
+    QLocale locale = QLocale::system();
+    QString name = locale.name();
+    if (locale.language() != QLocale::Chinese) {
+        switch (locale.territory()) {
+        case QLocale::China:
+            return "zh_CN";
+        case QLocale::Taiwan:
+        case QLocale::HongKong:
+        case QLocale::Macao:
+            return "zh_TW";
+        default:
+            break;
+        }
+    }
+    return name;
+}
+
 void EnvironmentSettings::doLoad()
 {
     //Appearance
+#ifdef Q_OS_MACOS
+    // macOS defaults follow the classic Dev-C++ 5.11 look: light theme,
+    // colourful icons that are readable on Retina displays.
+    mTheme = stringValue("theme","default");
+    mInterfaceFont = stringValue("interface_font", defaultUiFont());
+    mInterfaceFontSize = intValue("interface_font_size",11);
+    mIconZoomFactor = doubleValue("icon_zoom_factor",1.5);
+    mLanguage = stringValue("language", defaultLanguage());
+    mIconSet = stringValue("icon_set","bluesky");
+#else
     mTheme = stringValue("theme","dark");
     mInterfaceFont = stringValue("interface_font", defaultUiFont());
     mInterfaceFontSize = intValue("interface_font_size",11);
     mIconZoomFactor = doubleValue("icon_zoom_factor",1.0);
     mLanguage = stringValue("language", QLocale::system().name());
     mIconSet = stringValue("icon_set","contrast");
+#endif
     mUseCustomIconSet = boolValue("use_custom_icon_set", false);
     mComboboxWheel = boolValue("enable_combobox_wheel", false);
 

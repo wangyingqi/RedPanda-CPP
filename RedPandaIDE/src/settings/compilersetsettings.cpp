@@ -1063,6 +1063,10 @@ void CompilerSet::setExecutables()
         } else {
             mDebugServer = findProgramInBinDirs(GDB_SERVER_PROGRAM);
         }
+        if (mDebugger.isEmpty()) {
+            mDebugger = findProgramInBinDirs(LLDB_DAP_PROGRAM);
+            mDebugServer.clear();
+        }
         if (mCCompiler.isEmpty())
             mCCompiler =  findProgramInBinDirs(GCC_PROGRAM);
         if (mCppCompiler.isEmpty())
@@ -1078,6 +1082,10 @@ void CompilerSet::setExecutables()
         mCppCompiler = findProgramInBinDirs(GPP_PROGRAM);
         mDebugger = findProgramInBinDirs(GDB_PROGRAM);
         mDebugServer = findProgramInBinDirs(GDB_SERVER_PROGRAM);
+        if (mDebugger.isEmpty()) {
+            mDebugger = findProgramInBinDirs(LLDB_DAP_PROGRAM);
+            mDebugServer.clear();
+        }
     }
     if constexpr (MAKE_INTERFACE == MAKE_INTERFACE_mingw32) {
         mMake = findProgramInBinDirs(MAKE_PROGRAM);
@@ -1832,8 +1840,14 @@ void CompilerSets::findSets(bool showProgress)
 
 #ifdef ENABLE_LUA_ADDON
     QJsonObject compilerHint;
+    QString compilerHintPath = pSettings->dirs().appLibexecDir() + "/compiler_hint.lua";
+#ifdef Q_OS_MACOS
+    // In a signed .app bundle, non-code files must live under Resources, not MacOS.
+    if (!QFile::exists(compilerHintPath))
+        compilerHintPath = pSettings->dirs().appResourceDir() + "/compiler_hint.lua";
+#endif
     if (
-        QFile scriptFile(pSettings->dirs().appLibexecDir() + "/compiler_hint.lua");
+        QFile scriptFile(compilerHintPath);
         scriptFile.exists() && scriptFile.open(QFile::ReadOnly)
     ) {
         QByteArray script = scriptFile.readAll();

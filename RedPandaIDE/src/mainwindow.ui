@@ -152,24 +152,32 @@
     <addaction name="actionCompile"/>
     <addaction name="actionRun"/>
     <addaction name="actionRebuild"/>
+    <addaction name="separator"/>
     <addaction name="actionGenerate_Assembly"/>
     <addaction name="actionGenerate_GIMPLE"/>
     <addaction name="actionPreprocess"/>
     <addaction name="separator"/>
     <addaction name="actionRun_Parameters"/>
     <addaction name="actionCompiler_Options"/>
-    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuDebug">
+    <property name="title">
+     <string>Debug</string>
+    </property>
     <addaction name="actionDebug"/>
+    <addaction name="actionStop_Execution"/>
+    <addaction name="actionContinue"/>
     <addaction name="actionInterrupt"/>
+    <addaction name="separator"/>
     <addaction name="actionStep_Over"/>
     <addaction name="actionStep_Into"/>
     <addaction name="actionStep_Out"/>
     <addaction name="actionRun_To_Cursor"/>
-    <addaction name="actionContinue"/>
-    <addaction name="actionStop_Execution"/>
     <addaction name="separator"/>
+    <addaction name="actionToggle_Breakpoint"/>
     <addaction name="actionAdd_Watch"/>
     <addaction name="actionAdd_Watchpoint"/>
+    <addaction name="separator"/>
     <addaction name="actionView_CPU_Window"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -371,13 +379,11 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuSelection"/>
-   <addaction name="menuView"/>
    <addaction name="menuSearch"/>
-   <addaction name="menuCode"/>
-   <addaction name="menuRefactor"/>
+   <addaction name="menuView"/>
    <addaction name="menuProject"/>
    <addaction name="menuExecute"/>
+   <addaction name="menuDebug"/>
    <addaction name="menuTools"/>
    <addaction name="menuWindow"/>
    <addaction name="menuHelp"/>
@@ -404,6 +410,13 @@
    <addaction name="actionSave"/>
    <addaction name="actionSaveAs"/>
    <addaction name="actionSaveAll"/>
+   <addaction name="actionPrint"/>
+   <addaction name="separator"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="separator"/>
+   <addaction name="actionFind"/>
+   <addaction name="actionReplace"/>
   </widget>
   <widget class="QToolBar" name="toolbarCode">
    <property name="windowTitle">
