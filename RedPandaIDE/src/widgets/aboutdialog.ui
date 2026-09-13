@@ -22,7 +22,7 @@
    <item>
     <widget class="QLabel" name="lblTitle">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1 style=&quot; margin-top:18px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:xx-large; font-weight:600;&quot;&gt;MacDevCPP&lt;/span&gt;&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1 style=&quot; margin-top:18px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:xx-large; font-weight:600;&quot;&gt;Rainy-DevCPP-Mac&lt;/span&gt;&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -41,7 +41,7 @@
       <bool>true</bool>
      </property>
      <property name="text">
-      <string notr="true">&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;b&gt;MacDevCPP&lt;/b&gt; 是一款面向 C/C++ 学习与信息学竞赛入门的 macOS 集成开发环境。&lt;/p&gt;&lt;p&gt;本软件基于开源项目 &lt;b&gt;小熊猫 C++（Red Panda C++）&lt;/b&gt; 修改而来，原作者 瞿华（Roy Qu, royqh1979@gmail.com），项目主页 &lt;a href=&quot;https://github.com/royqh1979/RedPanda-CPP&quot;&gt;github.com/royqh1979/RedPanda-CPP&lt;/a&gt;，遵循 GNU 通用公共许可证第 3 版（GPL v3）。&lt;/p&gt;&lt;p&gt;MacDevCPP 在其基础上为 macOS 定制：使用 Xcode 的 lldb-dap 进行调试、默认采用 Homebrew GCC 编译器、兼容 Windows 教材常用写法（bits/stdc++.h、conio.h、system(&quot;pause&quot;) 等）、界面对齐经典 Dev-C++ 5.11，并内置由简入深的入门练习题库。本发行版同样以 GPL v3 许可证发布，源代码在原项目基础上修改。&lt;/p&gt;&lt;p&gt;&lt;b&gt;作者：&lt;/b&gt;学生家长　·　X: @wangyingqi　·　Email: &lt;a href=&quot;mailto:wangyingqi@gmail.com&quot;&gt;wangyingqi@gmail.com&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string notr="true">&lt;html&gt;&lt;body&gt;&lt;p&gt;&lt;b&gt;Rainy-DevCPP-Mac&lt;/b&gt; 是一款面向 C/C++ 学习与信息学竞赛入门的 macOS 集成开发环境。（Rainy 是一只英短蓝白猫的名字，也是本软件的吉祥物。）&lt;/p&gt;&lt;p&gt;本软件基于开源项目 &lt;b&gt;小熊猫 C++（Red Panda C++）&lt;/b&gt; 修改而来，原作者 瞿华（Roy Qu, royqh1979@gmail.com），项目主页 &lt;a href=&quot;https://github.com/royqh1979/RedPanda-CPP&quot;&gt;github.com/royqh1979/RedPanda-CPP&lt;/a&gt;，遵循 GNU 通用公共许可证第 3 版（GPL v3）。&lt;/p&gt;&lt;p&gt;Rainy-DevCPP-Mac 在其基础上为 macOS 定制：使用 Xcode 的 lldb-dap 进行调试、默认采用 Homebrew GCC 编译器、兼容 Windows 教材常用写法（bits/stdc++.h、conio.h、system(&quot;pause&quot;) 等）、界面对齐经典 Dev-C++ 5.11，并内置由简入深的入门练习题库。本发行版同样以 GPL v3 许可证发布，源代码在原项目基础上修改。&lt;/p&gt;&lt;p&gt;&lt;b&gt;作者：&lt;/b&gt;学生家长　·　X: @wangyingqi　·　Email: &lt;a href=&quot;mailto:wangyingqi@gmail.com&quot;&gt;wangyingqi@gmail.com&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignLeft|Qt::AlignTop</set>

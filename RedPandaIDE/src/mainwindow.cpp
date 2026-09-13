@@ -1506,7 +1506,7 @@ void MainWindow::updateAppTitle(const Editor *e)
 {
     if (mQuitting)
         return;
-    QString appName=QStringLiteral("MacDevCPP");
+    QString appName=QStringLiteral("Rainy-DevCPP-Mac");
     QCoreApplication *app = QApplication::instance();
     if (e && !e->inProject()) {
         QString str;

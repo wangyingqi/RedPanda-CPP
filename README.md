@@ -1,8 +1,8 @@
-# MacDevCPP
+# Rainy-DevCPP-Mac
 
-**MacDevCPP** 是一款面向 C/C++ 学习与信息学竞赛入门的 macOS 集成开发环境（IDE），当前版本 **1.0**。
+**Rainy-DevCPP-Mac** 是一款面向 C/C++ 学习与信息学竞赛入门的 macOS 集成开发环境（IDE），当前版本 **1.0**。吉祥物 Rainy 是一只英短蓝白猫。
 
-MacDevCPP 基于开源项目 [小熊猫 C++（Red Panda C++）](https://github.com/royqh1979/RedPanda-CPP) 修改而来，原作者 瞿华（Roy Qu, royqh1979@gmail.com），遵循 **GNU 通用公共许可证第 3 版（GPL v3）**。本发行版在其基础上为 macOS 做了适配与教学定制，同样以 GPL v3 发布，源代码在原项目基础上修改。
+Rainy-DevCPP-Mac 基于开源项目 [小熊猫 C++（Red Panda C++）](https://github.com/royqh1979/RedPanda-CPP) 修改而来，原作者 瞿华（Roy Qu, royqh1979@gmail.com），遵循 **GNU 通用公共许可证第 3 版（GPL v3）**。本发行版在其基础上为 macOS 做了适配与教学定制，同样以 GPL v3 发布，源代码在原项目基础上修改。
 
 初衷：让老师在 Windows 上用 Dev-C++ 教学、学生在 Mac 上也能用**几乎一样的界面和操作**跟着学，不必为了一个 IDE 去装 Windows。
 
@@ -44,7 +44,7 @@ cd RedPanda-CPP
 
 调试需要 Xcode 命令行工具自带的 `lldb-dap`（`xcode-select --install` 后即有）。
 
-> 说明：本仓库的可执行文件与 `.app` 内部名称仍沿用上游的 `RedPandaIDE`，但界面显示的产品名为 MacDevCPP。
+> 说明：本仓库的可执行文件与 `.app` 内部名称仍沿用上游的 `RedPandaIDE`，但界面显示的产品名为 Rainy-DevCPP-Mac。
 
 ## 许可证与致谢
 

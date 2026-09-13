@@ -385,8 +385,8 @@ endif()
 if(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     set_target_properties(RedPandaIDE PROPERTIES
         MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "MacDevCPP"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "net.macdevcpp")
+        MACOSX_BUNDLE_BUNDLE_NAME "Rainy-DevCPP-Mac"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "net.rainydevcpp.mac")
     set(MACOSX_BUNDLE_ICON_FILE RedPandaIDE.icns)
     set_source_files_properties(
         ${CMAKE_SOURCE_DIR}/platform/macos/RedPandaIDE.icns
