@@ -1506,7 +1506,7 @@ void MainWindow::updateAppTitle(const Editor *e)
 {
     if (mQuitting)
         return;
-    QString appName=QStringLiteral("容闳CPP");
+    QString appName=QStringLiteral("MacDevCPP");
     QCoreApplication *app = QApplication::instance();
     if (e && !e->inProject()) {
         QString str;
@@ -1516,22 +1516,22 @@ void MainWindow::updateAppTitle(const Editor *e)
           str = e->filename();
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Debugging"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Debugging"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Running"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Running"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Compiling"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Compiling"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             this->setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,RHCPP_VERSION));
+                                 .arg(str,appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
@@ -1548,24 +1548,24 @@ void MainWindow::updateAppTitle(const Editor *e)
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Debugging"),appName,RHCPP_VERSION));
+                                tr("Debugging"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Running"),appName,RHCPP_VERSION));
+                                tr("Running"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - %2 [%3] - %4 %5")
                            .arg(str,str2,
-                                tr("Compiling"),appName,RHCPP_VERSION));
+                                tr("Compiling"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,RHCPP_VERSION));
+                                 .arg(str,appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
@@ -1577,27 +1577,27 @@ void MainWindow::updateAppTitle(const Editor *e)
             str = mProject->name();
         if (mDebugger->executing()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Debugging"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Debugging"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Debugging"),appName));
         } else if (mCompilerManager->running()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Running"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Running"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Running"),appName));
         } else if (mCompilerManager->compiling()) {
             setWindowTitle(QString("%1 - [%2] - %3 %4")
-                           .arg(str,tr("Compiling"),appName,RHCPP_VERSION));
+                           .arg(str,tr("Compiling"),appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - [%2] - %3")
                                     .arg(str,tr("Compiling"),appName));
         } else {
             this->setWindowTitle(QString("%1 - %2 %3")
-                                 .arg(str,appName,RHCPP_VERSION));
+                                 .arg(str,appName,MACDEVCPP_VERSION));
             app->setApplicationName(QString("%1 - %2")
                                     .arg(str,appName));
         }
     } else {
-        setWindowTitle(QString("%1 %2").arg(appName,RHCPP_VERSION));
+        setWindowTitle(QString("%1 %2").arg(appName,MACDEVCPP_VERSION));
         app->setApplicationName(QString("%1").arg(appName));
     }
 }

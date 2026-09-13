@@ -188,8 +188,8 @@ target_compile_definitions(RedPandaIDE PRIVATE
     APP_NAME=\"${APP_NAME}\"
     LIBEXECDIR=\"${CMAKE_INSTALL_LIBEXECDIR}\"
     REDPANDA_CPP_VERSION=\"${REDPANDA_VERSION}\"
-    RHCPP_VERSION=\"1.0\"
-    RHCPP_BASE_VERSION=\"${REDPANDA_VERSION}\"
+    MACDEVCPP_VERSION=\"1.0\"
+    MACDEVCPP_BASE_VERSION=\"${REDPANDA_VERSION}\"
     ARCH_X86_64=1
     ARCH_X86=1)
 
@@ -385,8 +385,8 @@ endif()
 if(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     set_target_properties(RedPandaIDE PROPERTIES
         MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "容闳CPP"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "net.rhcpp")
+        MACOSX_BUNDLE_BUNDLE_NAME "MacDevCPP"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "net.macdevcpp")
     set(MACOSX_BUNDLE_ICON_FILE RedPandaIDE.icns)
     set_source_files_properties(
         ${CMAKE_SOURCE_DIR}/platform/macos/RedPandaIDE.icns

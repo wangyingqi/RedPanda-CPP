@@ -28,8 +28,8 @@ AboutDialog::AboutDialog(QWidget *parent) :
 {
     setWindowFlag(Qt::WindowContextHelpButtonHint,false);
     ui->setupUi(this);
-    ui->lblTitle->setText(ui->lblTitle->text() + tr("Version: ") + RHCPP_VERSION
-                          + QString("  (based on Red Panda C++ %1)").arg(RHCPP_BASE_VERSION));
+    ui->lblTitle->setText(ui->lblTitle->text() + tr("Version: ") + MACDEVCPP_VERSION
+                          + QString("  (based on Red Panda C++ %1)").arg(MACDEVCPP_BASE_VERSION));
 
     QString buildArch = appArch();
 #if defined(__x86_64__) && defined(ENABLE_GLIBC_HWCAPS)
