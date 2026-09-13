@@ -18,19 +18,22 @@
 #define RUNCONSOLEWIDGET_H
 
 #include <QElapsedTimer>
-#include <QProcess>
+#include <QStringDecoder>
 #include <QWidget>
 
 class QPlainTextEdit;
 class QLineEdit;
 class QLabel;
 class QToolButton;
+class QSocketNotifier;
 
 /**
  * An in-IDE console for running console programs without spawning an external
- * terminal window. stdout/stderr stream into a text view; a single-line input
- * feeds stdin. Interactive line-buffered programs (cin/cout, scanf/printf) work;
- * programs that need a real TTY (getch/conio, ANSI cursor/color control) do not.
+ * terminal window. The child is attached to a pseudo-terminal (PTY), so it sees
+ * a real TTY: prompts flush immediately and interactive input (cin/scanf) works
+ * as it does in a normal terminal. Output is shown as text (basic control
+ * characters handled; it is not a full VT100 emulator, so ANSI colour/cursor
+ * control sequences are not rendered).
  */
 class RunConsoleWidget : public QWidget {
     Q_OBJECT
@@ -52,23 +55,28 @@ signals:
     void runStateChanged(bool running);
 
 private slots:
-    void onReadyRead();
-    void onFinished(int exitCode, QProcess::ExitStatus status);
-    void onErrorOccurred(QProcess::ProcessError error);
+    void onMasterReadable();
     void sendInput();
 
 private:
     void appendText(const QString& text);
-    void appendMeta(const QString& text);       // status/summary lines (dimmed)
+    void appendMeta(const QString& text);       // status/summary lines
     void setRunningUi(bool running);
+    void finishRun(const QString& summary);
+    void closeMaster();
 
 private:
     QPlainTextEdit* mOutput;
     QLineEdit* mInput;
+    QLabel* mInputLabel;
     QLabel* mStatusLabel;
     QToolButton* mStopButton;
     QToolButton* mClearButton;
-    QProcess* mProcess;
+
+    int mMasterFd;
+    long long mChildPid;              // pid_t, kept as long long to avoid header leak
+    QSocketNotifier* mReadNotifier;
+    QStringDecoder mDecoder;
     QElapsedTimer mTimer;
 };
 

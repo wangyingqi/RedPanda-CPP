@@ -12894,8 +12894,12 @@ p, li { white-space: pre-wrap; }
         <translation>清空</translation>
     </message>
     <message>
-        <source>Type here and press Enter to send input to the program</source>
-        <translation>在此输入，按回车发送给程序</translation>
+        <source>Input:</source>
+        <translation>输入：</translation>
+    </message>
+    <message>
+        <source>When the program waits for input, type here and press Enter</source>
+        <translation>程序需要输入时，在这里打字并按回车</translation>
     </message>
     <message>
         <source>Ready</source>
@@ -12910,16 +12914,32 @@ p, li { white-space: pre-wrap; }
         <translation>已停止</translation>
     </message>
     <message>
-        <source>Process exited with code %1 (elapsed %2 s).</source>
-        <translation>进程结束，返回值 %1（耗时 %2 秒）。</translation>
+        <source>Program started. Type input below when it is requested.</source>
+        <translation>程序已启动。需要输入时，在下方"输入"框键入内容后按回车。</translation>
     </message>
     <message>
-        <source>Process crashed (elapsed %1 s).</source>
-        <translation>进程崩溃（耗时 %1 秒）。</translation>
+        <source>Process exited with code %1 (elapsed %2 s).</source>
+        <translation>程序结束，返回值 %1（耗时 %2 秒）。</translation>
+    </message>
+    <message>
+        <source>Process terminated by signal %1 (elapsed %2 s).</source>
+        <translation>程序被信号 %1 终止（耗时 %2 秒）。</translation>
+    </message>
+    <message>
+        <source>Process finished (elapsed %1 s).</source>
+        <translation>程序结束（耗时 %1 秒）。</translation>
+    </message>
+    <message>
+        <source>Stopped (elapsed %1 s).</source>
+        <translation>已停止（耗时 %1 秒）。</translation>
     </message>
     <message>
         <source>Failed to start the program.</source>
         <translation>无法启动程序。</translation>
+    </message>
+    <message>
+        <source>Failed to start the program (cannot allocate a terminal).</source>
+        <translation>无法启动程序（无法分配终端）。</translation>
     </message>
 </context>
 </TS>
