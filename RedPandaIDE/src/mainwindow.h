@@ -64,6 +64,7 @@ class QLabel;
 class QComboBox;
 class CompilerManager;
 class Editor;
+class RunConsoleWidget;
 class Debugger;
 class CPUDialog;
 class QPlainTextEdit;
@@ -171,6 +172,11 @@ public:
 #ifdef Q_OS_MACOS
     void applyDevCppLayout();
     void setupExampleLibrary();
+    void setupRunConsole();
+    /** Run a console program in the embedded panel instead of Terminal.app.
+     *  Returns false if it can't handle this program (caller falls back). */
+    bool runInEmbeddedConsole(const QString& exeName, const QString& filename,
+                              const QString& params, const QStringList& binDirs);
     void applyDevCppToolbarLabels();
     void setupClassFunctionNav();
     void updateClassFunctionNav(Editor* editor);
@@ -966,6 +972,9 @@ private:
     bool mClassNavUpdating = false;
     bool mStarterProblemSetLoaded = false;
     QFileSystemModel *mExampleLibModel = nullptr;
+    // Embedded run console (avoids spawning Terminal.app for normal Run)
+    RunConsoleWidget *mRunConsole = nullptr;
+    bool mEmbeddedRunning = false;
 #endif
     std::shared_ptr<QHash<StatementKind, std::shared_ptr<ColorSchemeItem> > > mStatementColors;
     SymbolUsageManager *mSymbolUsageManager;

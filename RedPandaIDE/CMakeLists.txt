@@ -118,6 +118,7 @@ target_moc_classes(RedPandaIDE
     src/widgets/ojproblemsetmodel
     src/widgets/qconsole
     src/widgets/qpatchedcombobox
+    src/widgets/runconsolewidget
     src/widgets/searchresultview
     src/widgets/shortcutinputedit
     src/widgets/shrinkabletabwidget)

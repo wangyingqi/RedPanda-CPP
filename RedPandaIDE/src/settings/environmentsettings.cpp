@@ -97,7 +97,11 @@ void EnvironmentSettings::doLoad()
 # else
     mUseCustomTerminal = boolValue("use_custom_terminal", false);
 # endif
-#else // UNIX
+#elif defined(Q_OS_MACOS)
+    // Default to the embedded run console (no Terminal.app pop-up / app switch);
+    // users can still opt into an external terminal.
+    mUseCustomTerminal = boolValue("use_custom_terminal", false);
+#else // other UNIX
     mUseCustomTerminal = true;
 #endif
 

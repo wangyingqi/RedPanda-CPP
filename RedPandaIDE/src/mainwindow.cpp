@@ -81,6 +81,9 @@
 #include "iconsmanager.h"
 #include "widgets/newclassdialog.h"
 #include "widgets/newheaderdialog.h"
+#ifdef Q_OS_MACOS
+#include "widgets/runconsolewidget.h"
+#endif
 #ifdef ENABLE_LUA_ADDON
 #include "addon/luaexecutor.h"
 #include "addon/luaruntime.h"
@@ -891,9 +894,14 @@ void MainWindow::updateCompileActions() {
 
 void MainWindow::updateCompileActions(const Editor *e)
 {
+    bool embeddedRunning = false;
+#ifdef Q_OS_MACOS
+    embeddedRunning = mEmbeddedRunning;
+#endif
     if (mCompilerManager->compiling()
             //|| mCompilerManager->backgroundSyntaxChecking()
-            || mCompilerManager->running() || mDebugger->executing()) {
+            || mCompilerManager->running() || mDebugger->executing()
+            || embeddedRunning) {
         ui->actionCompile->setEnabled(false);
         ui->actionRun->setEnabled(false);
         ui->actionRebuild->setEnabled(false);
@@ -982,7 +990,8 @@ void MainWindow::updateCompileActions(const Editor *e)
     if (!mDebugger->executing()) {
         disableDebugActions();
     }
-    ui->actionStop_Execution->setEnabled(mCompilerManager->running() || mDebugger->executing());
+    ui->actionStop_Execution->setEnabled(mCompilerManager->running() || mDebugger->executing()
+                                         || embeddedRunning);
 }
 
 void MainWindow::updateEditorColorSchemes()
@@ -1736,6 +1745,7 @@ void MainWindow::applyDevCppLayout()
     setPanelTab(ui->tabMessages, ui->tabSearch, tr("Find Results"));
     hidePanelTab(ui->tabMessages, ui->tabTODO);
     hidePanelTab(ui->tabMessages, ui->tabBookmark);
+    setupRunConsole();
     // keep snapshots in sync so show/hide toggles preserve the new labels
     for (int i=0;i<ui->tabExplorer->count();i++) {
         QWidget* w = ui->tabExplorer->widget(i);
@@ -1765,6 +1775,41 @@ void MainWindow::applyDevCppLayout()
         QWidget* w = ui->tabExplorer->widget(i);
         if (mTabInfosData.contains(w)) mTabInfosData[w]->text = ui->tabExplorer->tabText(i);
     }
+}
+
+void MainWindow::setupRunConsole()
+{
+    if (mRunConsole)
+        return;
+    mRunConsole = new RunConsoleWidget(ui->tabMessages);
+    // Place the "Run" tab right after "Compiler"/"Compile Log".
+    int insertAt = ui->tabMessages->indexOf(ui->tabSearch);
+    if (insertAt < 0) insertAt = ui->tabMessages->count();
+    ui->tabMessages->insertTab(insertAt, mRunConsole, tr("Run"));
+    connect(mRunConsole, &RunConsoleWidget::runStateChanged, this,
+            [this](bool running){
+        mEmbeddedRunning = running;
+        updateCompileActions();
+        updateAppTitle();
+    });
+}
+
+bool MainWindow::runInEmbeddedConsole(const QString& exeName, const QString& filename,
+                                      const QString& params, const QStringList& binDirs)
+{
+    if (!mRunConsole)
+        return false;
+    QStringList args = parseArgumentsWithoutVariables(params);
+    QString workDir = filename.isEmpty()
+            ? QFileInfo(exeName).absolutePath()
+            : QFileInfo(filename).absolutePath();
+    QStringList allBinDirs = binDirs;
+    allBinDirs << pSettings->dirs().appDir();
+    // bring the panel forward so output is visible without switching apps
+    stretchMessagesPanel(true);
+    ui->tabMessages->setCurrentWidget(mRunConsole);
+    mRunConsole->runProgram(exeName, args, workDir, allBinDirs);
+    return true;
 }
 
 void MainWindow::applyDevCppToolbarLabels()
@@ -2830,6 +2875,15 @@ void MainWindow::runExecutable(
             ? QFileInfo(exeName).absolutePath()
             : QFileInfo(filename).absolutePath();
     if (runType==RunType::Normal) {
+#ifdef Q_OS_MACOS
+        // Prefer the embedded run console so running a program doesn't pop up
+        // (and switch to) Terminal.app. Only when the user has explicitly
+        // configured a custom terminal do we honor the external-terminal path.
+        if (!pSettings->environment().useCustomTerminal()
+                && runInEmbeddedConsole(exeName, filename, params, binDirs)) {
+            return;
+        }
+#endif
         if (pSettings->executor().minimizeOnRun()) {
             showMinimized();
         }
@@ -6964,6 +7018,10 @@ void MainWindow::on_actionStop_Execution_triggered()
 {
     mCompilerManager->stopRun();
     mDebugger->stop();
+#ifdef Q_OS_MACOS
+    if (mRunConsole)
+        mRunConsole->stopProgram();
+#endif
 }
 
 void MainWindow::on_actionDebug_triggered()

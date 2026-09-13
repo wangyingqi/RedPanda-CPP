@@ -12883,4 +12883,43 @@ p, li { white-space: pre-wrap; }
         <translation>光标颜色</translation>
     </message>
 </context>
+<context>
+    <name>RunConsoleWidget</name>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>清空</translation>
+    </message>
+    <message>
+        <source>Type here and press Enter to send input to the program</source>
+        <translation>在此输入，按回车发送给程序</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Running…</source>
+        <translation>运行中…</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>已停止</translation>
+    </message>
+    <message>
+        <source>Process exited with code %1 (elapsed %2 s).</source>
+        <translation>进程结束，返回值 %1（耗时 %2 秒）。</translation>
+    </message>
+    <message>
+        <source>Process crashed (elapsed %1 s).</source>
+        <translation>进程崩溃（耗时 %1 秒）。</translation>
+    </message>
+    <message>
+        <source>Failed to start the program.</source>
+        <translation>无法启动程序。</translation>
+    </message>
+</context>
 </TS>
