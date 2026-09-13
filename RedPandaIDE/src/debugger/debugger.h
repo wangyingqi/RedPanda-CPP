@@ -160,6 +160,8 @@ public:
     bool useDebugServer() const;
     void setUseDebugServer(bool newUseDebugServer);
     bool supportDisassemlyBlendMode();
+
+    const QString &currentSourceFile() const { return mCurrentSourceFile; }
 signals:
     void evalValueReady(const QString& s);
     void memoryExamineReady(const QStringList& s);

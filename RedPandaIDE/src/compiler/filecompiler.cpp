@@ -20,6 +20,7 @@
 #include "qsynedit/syntaxer/asm.h"
 #include "../systemconsts.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -96,7 +97,15 @@ bool FileCompiler::prepareForCompile()
             mArguments << "-c";
             break;
         case CompilerSet::CompilationStage::GenerateExecutable:
-            mOutputFile = changeFileExt(mFilename,compilerSet()->executableSuffix());
+            // getOutputFilename() may redirect the executable out of the source
+            // tree (macOS cache dir); make sure the target folder exists so the
+            // compiler's -o path is writable.
+            mOutputFile = compilerSet()->getOutputFilename(mFilename);
+            {
+                QDir outDir(extractFileDir(mOutputFile));
+                if (!outDir.exists())
+                    outDir.mkpath(".");
+            }
         }
 #ifdef ENABLE_SDCC
         if (compilerSet()->compilerType()==CompilerType::SDCC) {

@@ -28,6 +28,10 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QCoreApplication>
+#ifdef Q_OS_MACOS
+#include <QCryptographicHash>
+#include <QStandardPaths>
+#endif
 #include "src/addon/luaexecutor.h"
 #include "src/addon/luaruntime.h"
 
@@ -1382,6 +1386,27 @@ void CompilerSet::setPersistInAutoFind(bool newPersistInAutoFind)
     mPersistInAutoFind = newPersistInAutoFind;
 }
 
+#ifdef Q_OS_MACOS
+// On macOS, building beside the source scatters the extension-less executable
+// and a whole ".dSYM" debug bundle next to the student's .cpp files. Route the
+// single-file executable into a per-source-folder cache directory instead, so
+// the source tree (e.g. the bundled example library) stays clean. The .dSYM
+// that the toolchain writes next to the executable follows it into the cache.
+static QString macExecutableCachePath(const QString &sourceFilename, const QString &suffix)
+{
+    QString absSource = extractAbsoluteFilePath(sourceFilename);
+    QString sourceDir = extractFileDir(absSource);
+    QByteArray hash = QCryptographicHash::hash(sourceDir.toUtf8(),
+                                               QCryptographicHash::Md5).toHex().left(16);
+    QString cacheRoot = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (cacheRoot.isEmpty())
+        cacheRoot = QDir::tempPath();
+    QString outDir = includeTrailingPathDelimiter(cacheRoot) + "build/" + QString::fromLatin1(hash);
+    QString baseName = changeFileExt(extractFileName(absSource), suffix);
+    return includeTrailingPathDelimiter(outDir) + baseName;
+}
+#endif
+
 QString CompilerSet::getOutputFilename(const QString &sourceFilename)
 {
     return getOutputFilename(sourceFilename, CompilationStage::GenerateExecutable);
@@ -1399,7 +1424,11 @@ QString CompilerSet::getOutputFilename(const QString &sourceFilename, Compilatio
     case CompilerSet::CompilationStage::AssemblingOnly:
         return changeFileExt(sourceFilename, assemblingSuffix());
     case CompilerSet::CompilationStage::GenerateExecutable:
+#ifdef Q_OS_MACOS
+        return macExecutableCachePath(sourceFilename, executableSuffix());
+#else
         return changeFileExt(sourceFilename, executableSuffix());
+#endif
     }
     return changeFileExt(sourceFilename,DEFAULT_EXECUTABLE_SUFFIX);
 }

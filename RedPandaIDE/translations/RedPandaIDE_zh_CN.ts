@@ -5028,6 +5028,10 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Example Library</source>
+        <translation>示例程序库</translation>
+    </message>
+    <message>
         <source>Classes</source>
         <translation>类</translation>
     </message>

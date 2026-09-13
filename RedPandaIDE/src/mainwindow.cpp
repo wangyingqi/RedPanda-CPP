@@ -24,6 +24,7 @@
 #include <QDragEnterEvent>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QDirIterator>
 #include <QFileInfo>
 #include <QInputDialog>
 #include <QJsonArray>
@@ -1744,6 +1745,26 @@ void MainWindow::applyDevCppLayout()
         QWidget* w = ui->tabMessages->widget(i);
         if (mTabMessagesData.contains(w)) mTabMessagesData[w]->text = ui->tabMessages->tabText(i);
     }
+    // Example library tab: label + place it just before the Problem Set tab.
+    setPanelTab(ui->tabExplorer, ui->tabExampleLib, tr("Example Library"));
+    {
+        QTabWidget* t = ui->tabExplorer;
+        int from = t->indexOf(ui->tabExampleLib);
+        int probIdx = t->indexOf(ui->tabProblemSet);
+        if (from>=0 && probIdx>=0) {
+            QString txt=t->tabText(from); QIcon ic=t->tabIcon(from);
+            t->removeTab(from);
+            int dest = t->indexOf(ui->tabProblemSet); // recompute after removal
+            if (dest<0) dest = t->count();
+            t->insertTab(dest, ui->tabExampleLib, ic, txt);
+        }
+    }
+    setupExampleLibrary();
+    // keep snapshot in sync for the new tab
+    for (int i=0;i<ui->tabExplorer->count();i++) {
+        QWidget* w = ui->tabExplorer->widget(i);
+        if (mTabInfosData.contains(w)) mTabInfosData[w]->text = ui->tabExplorer->tabText(i);
+    }
 }
 
 void MainWindow::applyDevCppToolbarLabels()
@@ -1764,6 +1785,46 @@ void MainWindow::applyDevCppToolbarLabels()
     label(ui->toolbarCode);
     label(ui->toolbarCompile);
     label(ui->toolbarDebug);
+}
+
+void MainWindow::setupExampleLibrary()
+{
+    QString bundled = includeTrailingPathDelimiter(pSettings->dirs().appResourceDir()) + "library";
+    QString docs = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QString libDir = includeTrailingPathDelimiter(docs) + QString::fromUtf8("Rainy-DevCPP-Mac 示例库");
+    // First run: copy the bundled library (categorized subfolders) to Documents (writable).
+    if (QDir(bundled).exists() && !QDir(libDir).exists()) {
+        QDir().mkpath(libDir);
+        QDirIterator it(bundled, QDir::Files, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            QString src = it.next();
+            QString rel = src.mid(bundled.length());
+            if (rel.startsWith('/')) rel = rel.mid(1);
+            QString dst = includeTrailingPathDelimiter(libDir) + rel;
+            QDir().mkpath(QFileInfo(dst).absolutePath());
+            QFile::copy(src, dst);
+        }
+    }
+    QString root = QDir(libDir).exists() ? libDir : bundled;
+    if (!QDir(root).exists())
+        return;
+    mExampleLibModel = new QFileSystemModel(this);
+    mExampleLibModel->setRootPath(root);
+    QStringList filters; filters << "*.cpp" << "*.c" << "*.h";
+    mExampleLibModel->setNameFilters(filters);
+    mExampleLibModel->setNameFilterDisables(false);
+    ui->exampleLibView->setModel(mExampleLibModel);
+    ui->exampleLibView->setRootIndex(mExampleLibModel->index(root));
+    for (int i=1;i<mExampleLibModel->columnCount();i++)
+        ui->exampleLibView->hideColumn(i);
+    connect(ui->exampleLibView, &QTreeView::doubleClicked, this,
+            [this](const QModelIndex& idx){
+        if (!mExampleLibModel) return;
+        if (mExampleLibModel->isDir(idx)) return;
+        QString path = mExampleLibModel->filePath(idx);
+        if (!path.isEmpty())
+            openFile(path);
+    });
 }
 
 void MainWindow::setupClassFunctionNav()
@@ -2761,15 +2822,22 @@ void MainWindow::runExecutable(
     if (pSettings->executor().useParams()) {
         params = pSettings->executor().params();
     }
+    // Run with the working directory anchored to the source (or project) file so
+    // relative file I/O behaves as the student expects. On Windows/Linux the
+    // executable sits beside the source, so this is the same folder as before;
+    // on macOS the executable is cached elsewhere, so this keeps CWD correct.
+    QString workDir = filename.isEmpty()
+            ? QFileInfo(exeName).absolutePath()
+            : QFileInfo(filename).absolutePath();
     if (runType==RunType::Normal) {
         if (pSettings->executor().minimizeOnRun()) {
             showMinimized();
         }
-        mCompilerManager->run(exeName,params,QFileInfo(exeName).absolutePath(),binDirs);
+        mCompilerManager->run(exeName,params,workDir,binDirs);
     } else if (runType == RunType::ProblemCases) {
         POJProblem problem = mOJProblemModel->problem();
         if (problem) {
-            mCompilerManager->runProblem(exeName,params,QFileInfo(exeName).absolutePath(),
+            mCompilerManager->runProblem(exeName,params,workDir,
                                          problem->cases(),
                                          problem);
             stretchMessagesPanel(true);
@@ -2780,7 +2848,7 @@ void MainWindow::runExecutable(
         if (index.isValid()) {
             POJProblemCase problemCase =mOJProblemModel->getCase(index.row());
             POJProblem problem = mOJProblemModel->problem();
-            mCompilerManager->runProblem(exeName,params,QFileInfo(exeName).absolutePath(),
+            mCompilerManager->runProblem(exeName,params,workDir,
                                          problemCase,
                                          problem);
             stretchMessagesPanel(true);

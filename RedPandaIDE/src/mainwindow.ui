@@ -942,6 +942,24 @@
       </item>
      </layout>
     </widget>
+    <widget class="QWidget" name="tabExampleLib">
+     <attribute name="title">
+      <string>Example Library</string>
+     </attribute>
+     <layout class="QHBoxLayout" name="horizontalLayout_exlib">
+      <property name="leftMargin"><number>2</number></property>
+      <property name="topMargin"><number>2</number></property>
+      <property name="rightMargin"><number>2</number></property>
+      <property name="bottomMargin"><number>2</number></property>
+      <item>
+       <widget class="QTreeView" name="exampleLibView">
+        <property name="editTriggers"><set>QAbstractItemView::NoEditTriggers</set></property>
+        <property name="headerHidden"><bool>true</bool></property>
+        <property name="alternatingRowColors"><bool>true</bool></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </widget>
   </widget>
   <widget class="QDockWidget" name="dockMessages">

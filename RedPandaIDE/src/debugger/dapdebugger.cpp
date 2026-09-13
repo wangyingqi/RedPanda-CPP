@@ -263,7 +263,14 @@ bool DAPDebuggerClient::commandRunning() const
 void DAPDebuggerClient::initialize(const QString &inferior, bool /*hasSymbols*/)
 {
     mInferior = inferior;
-    mWorkingDir = extractFileDir(inferior);
+    // On macOS the executable is cached outside the source tree, so anchor the
+    // inferior's working directory to the source file's folder (falling back to
+    // the executable's folder) so programs that read files relative to their
+    // source keep working.
+    QString sourceDir;
+    if (debugger())
+        sourceDir = extractFileDir(debugger()->currentSourceFile());
+    mWorkingDir = sourceDir.isEmpty() ? extractFileDir(inferior) : sourceDir;
     QJsonObject args{
         {"clientID", "redpanda-cpp"},
         {"clientName", "Red Panda C++"},

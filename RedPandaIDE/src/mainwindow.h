@@ -170,6 +170,7 @@ public:
     QString devCppIssuesLabel() const;
 #ifdef Q_OS_MACOS
     void applyDevCppLayout();
+    void setupExampleLibrary();
     void applyDevCppToolbarLabels();
     void setupClassFunctionNav();
     void updateClassFunctionNav(Editor* editor);
@@ -964,6 +965,7 @@ private:
     QList<PStatement> mClassNavMembers;   // parallel to member combo items
     bool mClassNavUpdating = false;
     bool mStarterProblemSetLoaded = false;
+    QFileSystemModel *mExampleLibModel = nullptr;
 #endif
     std::shared_ptr<QHash<StatementKind, std::shared_ptr<ColorSchemeItem> > > mStatementColors;
     SymbolUsageManager *mSymbolUsageManager;

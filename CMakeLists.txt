@@ -346,6 +346,16 @@ elseif(${FILESYSTEM_LAYOUT} STREQUAL "bundle")
     install(
         FILES platform/macos/starter_problemset.json
         DESTINATION RedPandaIDE.app/Contents/Resources)
+    # macOS: bundled example programs (copied to ~/Documents on first run)
+    install(
+        DIRECTORY platform/macos/examples
+        DESTINATION RedPandaIDE.app/Contents/Resources
+        USE_SOURCE_PERMISSIONS)
+    # macOS: bundled 100-example categorized library (copied to ~/Documents on first run)
+    install(
+        DIRECTORY platform/macos/library
+        DESTINATION RedPandaIDE.app/Contents/Resources
+        USE_SOURCE_PERMISSIONS)
 else()
     message(FATAL_ERROR "Unknown FILESYSTEM_LAYOUT: ${FILESYSTEM_LAYOUT}")
 endif()
