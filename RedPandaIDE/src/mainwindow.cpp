@@ -23,6 +23,8 @@
 #include <QDesktopServices>
 #include <QDragEnterEvent>
 #include <QFileDialog>
+#include <QStandardPaths>
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -413,6 +415,18 @@ MainWindow::MainWindow(QWidget *parent)
             if (fileExists(starter)) {
                 mOJProblemSetModel->loadFromFile(starter,false,currentIndex);
                 mStarterProblemSetLoaded = true;   // show the panel at the end of setup
+            }
+        }
+        // First run: copy bundled example programs to ~/Documents so students can open them quickly.
+        {
+            QString examplesSrc = includeTrailingPathDelimiter(pSettings->dirs().appResourceDir()) + "examples";
+            QString docs = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+            QString dest = includeTrailingPathDelimiter(docs) + QString::fromUtf8("Rainy-DevCPP-Mac 示例");
+            if (QDir(examplesSrc).exists() && !QDir(dest).exists()) {
+                QDir().mkpath(dest);
+                const auto files = QDir(examplesSrc).entryInfoList(QDir::Files, QDir::Name);
+                for (const QFileInfo& fi : files)
+                    QFile::copy(fi.absoluteFilePath(), includeTrailingPathDelimiter(dest) + fi.fileName());
             }
         }
 #endif
