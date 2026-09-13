@@ -12894,12 +12894,8 @@ p, li { white-space: pre-wrap; }
         <translation>清空</translation>
     </message>
     <message>
-        <source>Input:</source>
-        <translation>输入：</translation>
-    </message>
-    <message>
-        <source>When the program waits for input, type here and press Enter</source>
-        <translation>程序需要输入时，在这里打字并按回车</translation>
+        <source>Type directly in the console; input goes to the program (Ctrl+C interrupts).</source>
+        <translation>直接在控制台里打字即可，输入会送给程序（Ctrl+C 中断）。</translation>
     </message>
     <message>
         <source>Ready</source>
@@ -12912,10 +12908,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Stopped</source>
         <translation>已停止</translation>
-    </message>
-    <message>
-        <source>Program started. Type input below when it is requested.</source>
-        <translation>程序已启动。需要输入时，在下方"输入"框键入内容后按回车。</translation>
     </message>
     <message>
         <source>Process exited with code %1 (elapsed %2 s).</source>

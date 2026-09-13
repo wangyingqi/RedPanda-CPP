@@ -18,22 +18,46 @@
 #define RUNCONSOLEWIDGET_H
 
 #include <QElapsedTimer>
+#include <QPlainTextEdit>
 #include <QStringDecoder>
+#include <QTextCharFormat>
+#include <QTextCursor>
 #include <QWidget>
 
-class QPlainTextEdit;
-class QLineEdit;
 class QLabel;
 class QToolButton;
 class QSocketNotifier;
 
 /**
- * An in-IDE console for running console programs without spawning an external
- * terminal window. The child is attached to a pseudo-terminal (PTY), so it sees
- * a real TTY: prompts flush immediately and interactive input (cin/scanf) works
- * as it does in a normal terminal. Output is shown as text (basic control
- * characters handled; it is not a full VT100 emulator, so ANSI colour/cursor
- * control sequences are not rendered).
+ * A QPlainTextEdit that behaves like a terminal display: it never edits its own
+ * text in response to keystrokes; instead each keypress is turned into terminal
+ * bytes and emitted via keyInput() to be written to the PTY. What appears on
+ * screen is only what the program (echoed by the tty) writes back.
+ */
+class ConsoleView : public QPlainTextEdit {
+    Q_OBJECT
+public:
+    explicit ConsoleView(QWidget* parent = nullptr);
+    void setRunning(bool running) { mRunning = running; }
+
+signals:
+    void keyInput(const QByteArray& bytes);
+    void pasteRequested();
+
+protected:
+    void keyPressEvent(QKeyEvent* e) override;
+
+private:
+    bool mRunning = false;
+};
+
+/**
+ * An in-IDE terminal for running console programs without spawning an external
+ * terminal window. The child is attached to a pseudo-terminal (PTY) and the user
+ * types directly in the view, so interactive input (cin/scanf), getch, line
+ * editing, backspace and Ctrl+C behave as in a real terminal. A pragmatic subset
+ * of ANSI escapes is rendered (SGR colours, CR overwrite, BS, TAB, erase
+ * line/screen, simple cursor moves); it is not a full-screen VT100/ncurses host.
  */
 class RunConsoleWidget : public QWidget {
     Q_OBJECT
@@ -56,28 +80,40 @@ signals:
 
 private slots:
     void onMasterReadable();
-    void sendInput();
+    void writeToPty(const QByteArray& bytes);
+    void pasteToPty();
 
 private:
-    void appendText(const QString& text);
-    void appendMeta(const QString& text);       // status/summary lines
+    // terminal rendering
+    void feed(const QString& text);
+    void putChar(QChar c);
+    void handleCsi(const QString& seq, QChar final);
+    void applySgr(const QString& params);
+    void appendMeta(const QString& text);
+    void syncCaret();
+
     void setRunningUi(bool running);
     void finishRun(const QString& summary);
     void closeMaster();
 
 private:
-    QPlainTextEdit* mOutput;
-    QLineEdit* mInput;
-    QLabel* mInputLabel;
+    ConsoleView* mView;
     QLabel* mStatusLabel;
+    QLabel* mHintLabel;
     QToolButton* mStopButton;
     QToolButton* mClearButton;
 
     int mMasterFd;
-    long long mChildPid;              // pid_t, kept as long long to avoid header leak
+    long long mChildPid;              // pid_t, kept wide to avoid header leak
     QSocketNotifier* mReadNotifier;
     QStringDecoder mDecoder;
     QElapsedTimer mTimer;
+
+    // terminal state
+    QTextCursor mCursor;
+    QTextCharFormat mFormat;
+    QTextCharFormat mDefaultFormat;
+    QString mEscPending;              // incomplete escape sequence across reads
 };
 
 #endif // RUNCONSOLEWIDGET_H

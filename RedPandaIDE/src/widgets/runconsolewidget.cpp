@@ -18,13 +18,15 @@
 
 #include "../systemconsts.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QFontDatabase>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
-#include <QLineEdit>
-#include <QPlainTextEdit>
 #include <QScrollBar>
 #include <QSocketNotifier>
+#include <QTextBlock>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -39,6 +41,93 @@
 #include <unistd.h>
 #include <util.h>          // forkpty() on macOS/BSD
 
+/* ------------------------------------------------------------------ */
+/* ConsoleView: turn keystrokes into terminal bytes                    */
+/* ------------------------------------------------------------------ */
+
+ConsoleView::ConsoleView(QWidget* parent)
+    : QPlainTextEdit(parent)
+{
+    setUndoRedoEnabled(false);
+    setLineWrapMode(QPlainTextEdit::NoWrap);
+    setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    // Not read-only, so a text caret is shown; edits are prevented by the
+    // keyPressEvent override (typing is forwarded to the PTY, not inserted).
+}
+
+void ConsoleView::keyPressEvent(QKeyEvent* e)
+{
+    if (!mRunning) {
+        // allow navigation/copy but no editing when idle
+        if (e->matches(QKeySequence::Copy) || e->matches(QKeySequence::SelectAll))
+            QPlainTextEdit::keyPressEvent(e);
+        return;
+    }
+    Qt::KeyboardModifiers m = e->modifiers();
+#ifdef Q_OS_MACOS
+    // On macOS Qt maps Cmd->ControlModifier and physical Ctrl->MetaModifier.
+    const bool cmd = m.testFlag(Qt::ControlModifier);
+    const bool ctrl = m.testFlag(Qt::MetaModifier);
+#else
+    const bool cmd = false;
+    const bool ctrl = m.testFlag(Qt::ControlModifier);
+#endif
+    if (cmd) {
+        if (e->key() == Qt::Key_V) { emit pasteRequested(); return; }
+        if (e->key() == Qt::Key_C) { copy(); return; }
+        if (e->key() == Qt::Key_A) { selectAll(); return; }
+        return; // swallow other Cmd shortcuts
+    }
+
+    QByteArray out;
+    const int key = e->key();
+    if (ctrl && key >= Qt::Key_A && key <= Qt::Key_Z) {
+        out.append(char(key - Qt::Key_A + 1)); // Ctrl-A..Z -> 0x01..0x1a
+    } else {
+        switch (key) {
+        case Qt::Key_Return:
+        case Qt::Key_Enter:     out.append('\r'); break;
+        case Qt::Key_Backspace: out.append(char(0x7f)); break;
+        case Qt::Key_Tab:       out.append('\t'); break;
+        case Qt::Key_Escape:    out.append(char(0x1b)); break;
+        case Qt::Key_Up:        out.append("\x1b[A", 3); break;
+        case Qt::Key_Down:      out.append("\x1b[B", 3); break;
+        case Qt::Key_Right:     out.append("\x1b[C", 3); break;
+        case Qt::Key_Left:      out.append("\x1b[D", 3); break;
+        case Qt::Key_Home:      out.append("\x1b[H", 3); break;
+        case Qt::Key_End:       out.append("\x1b[F", 3); break;
+        case Qt::Key_Delete:    out.append("\x1b[3~", 4); break;
+        default:
+            if (!e->text().isEmpty())
+                out = e->text().toUtf8();
+            break;
+        }
+    }
+    if (!out.isEmpty())
+        emit keyInput(out);
+}
+
+/* ------------------------------------------------------------------ */
+/* ANSI 16-colour palette                                              */
+/* ------------------------------------------------------------------ */
+
+static QColor ansiColor(int index)
+{
+    static const QColor palette[16] = {
+        QColor(0,0,0),       QColor(205,49,49),   QColor(13,188,121),  QColor(229,229,16),
+        QColor(36,114,200),  QColor(188,63,188),  QColor(17,168,205),  QColor(229,229,229),
+        QColor(102,102,102), QColor(241,76,76),   QColor(35,209,139),  QColor(245,245,67),
+        QColor(59,142,234),  QColor(214,112,214), QColor(41,184,219),  QColor(255,255,255),
+    };
+    if (index < 0 || index > 15)
+        return QColor();
+    return palette[index];
+}
+
+/* ------------------------------------------------------------------ */
+/* RunConsoleWidget                                                     */
+/* ------------------------------------------------------------------ */
+
 RunConsoleWidget::RunConsoleWidget(QWidget* parent)
     : QWidget(parent),
       mMasterFd(-1),
@@ -46,12 +135,9 @@ RunConsoleWidget::RunConsoleWidget(QWidget* parent)
       mReadNotifier(nullptr),
       mDecoder(QStringDecoder::Utf8)
 {
-    mOutput = new QPlainTextEdit(this);
-    mOutput->setReadOnly(true);
-    mOutput->setUndoRedoEnabled(false);
-    mOutput->setMaximumBlockCount(20000);
-    mOutput->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-    mOutput->setLineWrapMode(QPlainTextEdit::NoWrap);
+    mView = new ConsoleView(this);
+    mDefaultFormat = mView->currentCharFormat();
+    mFormat = mDefaultFormat;
 
     mStatusLabel = new QLabel(this);
     mStopButton = new QToolButton(this);
@@ -60,7 +146,7 @@ RunConsoleWidget::RunConsoleWidget(QWidget* parent)
     connect(mStopButton, &QToolButton::clicked, this, &RunConsoleWidget::stopProgram);
     mClearButton = new QToolButton(this);
     mClearButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-    connect(mClearButton, &QToolButton::clicked, mOutput, &QPlainTextEdit::clear);
+    connect(mClearButton, &QToolButton::clicked, mView, &QPlainTextEdit::clear);
 
     auto* topBar = new QHBoxLayout;
     topBar->setContentsMargins(4, 2, 4, 2);
@@ -69,24 +155,24 @@ RunConsoleWidget::RunConsoleWidget(QWidget* parent)
     topBar->addWidget(mClearButton);
     topBar->addWidget(mStopButton);
 
-    mInputLabel = new QLabel(this);
-    mInput = new QLineEdit(this);
-    mInput->setClearButtonEnabled(true);
-    mInput->setEnabled(false);
-    connect(mInput, &QLineEdit::returnPressed, this, &RunConsoleWidget::sendInput);
-
-    auto* inputBar = new QHBoxLayout;
-    inputBar->setContentsMargins(4, 0, 4, 2);
-    inputBar->addWidget(mInputLabel);
-    inputBar->addWidget(mInput, 1);
+    mHintLabel = new QLabel(this);
+    mHintLabel->setContentsMargins(4, 0, 4, 2);
+    QFont hf = mHintLabel->font();
+    hf.setPointSizeF(hf.pointSizeF() * 0.9);
+    mHintLabel->setFont(hf);
+    mHintLabel->setEnabled(false);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(2);
     layout->addLayout(topBar);
-    layout->addWidget(mOutput, 1);
-    layout->addLayout(inputBar);
+    layout->addWidget(mView, 1);
+    layout->addWidget(mHintLabel);
 
+    connect(mView, &ConsoleView::keyInput, this, &RunConsoleWidget::writeToPty);
+    connect(mView, &ConsoleView::pasteRequested, this, &RunConsoleWidget::pasteToPty);
+
+    mCursor = QTextCursor(mView->document());
     retranslate();
 }
 
@@ -101,8 +187,7 @@ void RunConsoleWidget::retranslate()
 {
     mStopButton->setText(tr("Stop"));
     mClearButton->setText(tr("Clear"));
-    mInputLabel->setText(tr("Input:"));
-    mInput->setPlaceholderText(tr("When the program waits for input, type here and press Enter"));
+    mHintLabel->setText(tr("Type directly in the console; input goes to the program (Ctrl+C interrupts)."));
     if (!isRunning())
         mStatusLabel->setText(tr("Ready"));
 }
@@ -133,10 +218,14 @@ void RunConsoleWidget::runProgram(const QString& program,
     if (isRunning())
         stopProgram();
     closeMaster();
-    mOutput->clear();
-    mDecoder = QStringDecoder(QStringDecoder::Utf8);
 
-    // Give the child a reasonably sized terminal window.
+    mView->clear();
+    mDecoder = QStringDecoder(QStringDecoder::Utf8);
+    mFormat = mDefaultFormat;
+    mEscPending.clear();
+    mCursor = QTextCursor(mView->document());
+    mCursor.movePosition(QTextCursor::End);
+
     struct winsize ws;
     memset(&ws, 0, sizeof(ws));
     ws.ws_row = 24;
@@ -152,19 +241,14 @@ void RunConsoleWidget::runProgram(const QString& program,
 
     if (pid == 0) {
         // --- child ---
-        if (!workDir.isEmpty()) {
-            if (chdir(workDir.toLocal8Bit().constData()) != 0) {
-                // continue anyway; not fatal for stdin/stdout programs
-            }
-        }
+        if (!workDir.isEmpty())
+            (void)chdir(workDir.toLocal8Bit().constData());
         if (!binDirs.isEmpty()) {
             QByteArray path = qgetenv("PATH");
             QByteArray prepend = binDirs.join(PATH_SEPARATOR).toLocal8Bit();
-            QByteArray full = path.isEmpty() ? prepend
-                                             : prepend + PATH_SEPARATOR + path;
+            QByteArray full = path.isEmpty() ? prepend : prepend + PATH_SEPARATOR + path;
             setenv("PATH", full.constData(), 1);
         }
-        // Let programs that check $TERM behave like a simple terminal.
         setenv("TERM", "xterm-256color", 1);
 
         QList<QByteArray> argvStore;
@@ -177,7 +261,6 @@ void RunConsoleWidget::runProgram(const QString& program,
         argv.push_back(nullptr);
 
         execv(program.toLocal8Bit().constData(), argv.data());
-        // exec failed
         const char* msg = "Failed to start the program.\n";
         [[maybe_unused]] auto r = write(STDERR_FILENO, msg, strlen(msg));
         _exit(127);
@@ -194,8 +277,7 @@ void RunConsoleWidget::runProgram(const QString& program,
 
     mTimer.start();
     setRunningUi(true);
-    appendMeta(tr("Program started. Type input below when it is requested."));
-    mInput->setFocus();
+    mView->setFocus();
 }
 
 void RunConsoleWidget::onMasterReadable()
@@ -207,20 +289,16 @@ void RunConsoleWidget::onMasterReadable()
     while (true) {
         ssize_t n = ::read(mMasterFd, buf, sizeof(buf));
         if (n > 0) {
-            QString piece = mDecoder.decode(QByteArrayView(buf, n));
-            piece.replace("\r\n", "\n");
-            piece.replace('\r', QString());
-            appendText(piece);
+            feed(mDecoder.decode(QByteArrayView(buf, n)));
         } else if (n == 0) {
             eof = true;
             break;
         } else {
             if (errno == EINTR)
                 continue;
-            // EAGAIN/EWOULDBLOCK: no more data for now
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 return;
-            eof = true; // EIO on macOS signals the slave side closed
+            eof = true;    // EIO on macOS: slave closed
             break;
         }
     }
@@ -246,15 +324,13 @@ void RunConsoleWidget::onMasterReadable()
     }
 }
 
-void RunConsoleWidget::sendInput()
+void RunConsoleWidget::writeToPty(const QByteArray& bytes)
 {
-    if (!isRunning() || mMasterFd < 0)
+    if (mMasterFd < 0)
         return;
-    QByteArray line = (mInput->text() + "\n").toUtf8();
-    // The PTY echoes what we write, so it will appear in the output view.
-    ssize_t off = 0;
-    while (off < line.size()) {
-        ssize_t w = ::write(mMasterFd, line.constData() + off, line.size() - off);
+    qint64 off = 0;
+    while (off < bytes.size()) {
+        ssize_t w = ::write(mMasterFd, bytes.constData() + off, bytes.size() - off);
         if (w < 0) {
             if (errno == EINTR)
                 continue;
@@ -262,31 +338,224 @@ void RunConsoleWidget::sendInput()
         }
         off += w;
     }
-    mInput->clear();
 }
 
-void RunConsoleWidget::appendText(const QString& text)
+void RunConsoleWidget::pasteToPty()
 {
-    if (text.isEmpty())
-        return;
-    QScrollBar* sb = mOutput->verticalScrollBar();
+    const QString text = QApplication::clipboard()->text();
+    if (!text.isEmpty())
+        writeToPty(text.toUtf8());
+}
+
+/* --------------------------- terminal rendering ------------------------- */
+
+void RunConsoleWidget::putChar(QChar c)
+{
+    if (!mCursor.atBlockEnd()) {
+        // overwrite the character under the cursor (terminal semantics)
+        mCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor);
+        mCursor.insertText(QString(c), mFormat);
+    } else {
+        mCursor.insertText(QString(c), mFormat);
+    }
+}
+
+void RunConsoleWidget::feed(const QString& textIn)
+{
+    QString text = mEscPending + textIn;
+    mEscPending.clear();
+
+    QScrollBar* sb = mView->verticalScrollBar();
     bool atBottom = sb->value() >= sb->maximum() - 4;
-    mOutput->moveCursor(QTextCursor::End);
-    mOutput->insertPlainText(text);
+
+    int i = 0;
+    const int n = text.length();
+    while (i < n) {
+        QChar c = text.at(i);
+        ushort u = c.unicode();
+        if (u == 0x1b) { // ESC
+            // Need at least ESC + one more char to know the kind
+            if (i + 1 >= n) { mEscPending = text.mid(i); break; }
+            QChar next = text.at(i + 1);
+            if (next == '[') {
+                // CSI: ESC [ params... final(0x40-0x7e)
+                int j = i + 2;
+                while (j < n) {
+                    ushort fj = text.at(j).unicode();
+                    if (fj >= 0x40 && fj <= 0x7e)
+                        break;
+                    j++;
+                }
+                if (j >= n) { mEscPending = text.mid(i); break; } // incomplete
+                QString seq = text.mid(i + 2, j - (i + 2));
+                handleCsi(seq, text.at(j));
+                i = j + 1;
+                continue;
+            } else if (next == ']') {
+                // OSC: ESC ] ... BEL or ST(ESC \). Skip it (e.g. window title).
+                int j = i + 2;
+                bool done = false;
+                while (j < n) {
+                    if (text.at(j).unicode() == 0x07) { j++; done = true; break; }
+                    if (text.at(j).unicode() == 0x1b && j + 1 < n && text.at(j+1) == '\\') {
+                        j += 2; done = true; break;
+                    }
+                    j++;
+                }
+                if (!done) { mEscPending = text.mid(i); break; }
+                i = j;
+                continue;
+            } else {
+                // other 2-char escape (e.g. ESC(B) - ignore
+                i += 2;
+                continue;
+            }
+        } else if (u == '\n') {
+            if (mCursor.blockNumber() >= mView->document()->blockCount() - 1) {
+                mCursor.movePosition(QTextCursor::EndOfBlock);
+                mCursor.insertBlock();
+            } else {
+                mCursor.movePosition(QTextCursor::NextBlock);
+                mCursor.movePosition(QTextCursor::StartOfBlock);
+            }
+            i++;
+        } else if (u == '\r') {
+            mCursor.movePosition(QTextCursor::StartOfBlock);
+            i++;
+        } else if (u == '\b') {
+            if (!mCursor.atBlockStart())
+                mCursor.movePosition(QTextCursor::PreviousCharacter);
+            i++;
+        } else if (u == '\t') {
+            int col = mCursor.positionInBlock();
+            int spaces = 8 - (col % 8);
+            for (int s = 0; s < spaces; s++)
+                putChar(QChar(' '));
+            i++;
+        } else if (u == 0x07) { // BEL
+            i++;
+        } else if (u < 0x20) {
+            i++; // ignore other control chars
+        } else {
+            putChar(c);
+            i++;
+        }
+    }
+
+    syncCaret();
     if (atBottom)
         sb->setValue(sb->maximum());
 }
 
+void RunConsoleWidget::handleCsi(const QString& seq, QChar final)
+{
+    auto firstParam = [&](int def) {
+        bool ok = false;
+        int v = seq.section(';', 0, 0).toInt(&ok);
+        return ok ? v : def;
+    };
+    switch (final.unicode()) {
+    case 'm':
+        applySgr(seq);
+        break;
+    case 'K': { // erase in line
+        int mode = firstParam(0);
+        QTextCursor c = mCursor;
+        if (mode == 0) {
+            c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        } else if (mode == 1) {
+            int pos = mCursor.positionInBlock();
+            c.movePosition(QTextCursor::StartOfBlock);
+            c.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, pos);
+        } else {
+            c.movePosition(QTextCursor::StartOfBlock);
+            c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        }
+        c.removeSelectedText();
+        break;
+    }
+    case 'J': { // erase in display
+        int mode = firstParam(0);
+        if (mode == 2 || mode == 3) {
+            mView->clear();
+            mCursor = QTextCursor(mView->document());
+        } else if (mode == 0) {
+            QTextCursor c = mCursor;
+            c.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+            c.removeSelectedText();
+        }
+        break;
+    }
+    case 'A': { int nn = firstParam(1); for (int k=0;k<nn;k++) mCursor.movePosition(QTextCursor::PreviousBlock); break; }
+    case 'B': { int nn = firstParam(1); for (int k=0;k<nn;k++) mCursor.movePosition(QTextCursor::NextBlock); break; }
+    case 'C': { int nn = firstParam(1); mCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveAnchor, nn); break; }
+    case 'D': { int nn = firstParam(1); mCursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, nn); break; }
+    default:
+        break; // ignore cursor addressing (H/f) and the rest
+    }
+}
+
+void RunConsoleWidget::applySgr(const QString& params)
+{
+    const QStringList parts = params.isEmpty() ? QStringList{"0"} : params.split(';');
+    for (int idx = 0; idx < parts.size(); idx++) {
+        bool ok = false;
+        int p = parts.at(idx).toInt(&ok);
+        if (!ok) continue;
+        if (p == 0) {
+            mFormat = mDefaultFormat;
+        } else if (p == 1) {
+            mFormat.setFontWeight(QFont::Bold);
+        } else if (p == 22) {
+            mFormat.setFontWeight(QFont::Normal);
+        } else if (p == 4) {
+            mFormat.setFontUnderline(true);
+        } else if (p == 24) {
+            mFormat.setFontUnderline(false);
+        } else if (p >= 30 && p <= 37) {
+            mFormat.setForeground(ansiColor(p - 30));
+        } else if (p >= 90 && p <= 97) {
+            mFormat.setForeground(ansiColor(p - 90 + 8));
+        } else if (p == 39) {
+            mFormat.setForeground(mDefaultFormat.foreground());
+        } else if (p >= 40 && p <= 47) {
+            mFormat.setBackground(ansiColor(p - 40));
+        } else if (p >= 100 && p <= 107) {
+            mFormat.setBackground(ansiColor(p - 100 + 8));
+        } else if (p == 49) {
+            mFormat.setBackground(mDefaultFormat.background());
+        } else if ((p == 38 || p == 48) && idx + 2 < parts.size() && parts.at(idx+1).toInt() == 5) {
+            int n256 = parts.at(idx + 2).toInt();
+            QColor col = (n256 < 16) ? ansiColor(n256) : QColor();
+            if (col.isValid()) {
+                if (p == 38) mFormat.setForeground(col); else mFormat.setBackground(col);
+            }
+            idx += 2;
+        }
+    }
+}
+
+void RunConsoleWidget::syncCaret()
+{
+    mView->setTextCursor(mCursor);
+    mView->ensureCursorVisible();
+}
+
 void RunConsoleWidget::appendMeta(const QString& text)
 {
-    appendText("\n──────────\n" + text + "\n");
+    mCursor.movePosition(QTextCursor::End);
+    QTextCharFormat meta = mDefaultFormat;
+    meta.setForeground(ansiColor(8)); // dim grey
+    mCursor.insertText("\n──────────\n" + text + "\n", meta);
+    syncCaret();
 }
+
+/* --------------------------- lifecycle -------------------------------- */
 
 void RunConsoleWidget::finishRun(const QString& summary)
 {
     closeMaster();
     if (mChildPid > 0) {
-        // Reap in case waitpid wasn't reached above.
         int st;
         waitpid((pid_t)mChildPid, &st, WNOHANG);
         mChildPid = -1;
@@ -318,9 +587,9 @@ void RunConsoleWidget::stopProgram()
 void RunConsoleWidget::setRunningUi(bool running)
 {
     mStopButton->setEnabled(running);
-    mInput->setEnabled(running);
+    mView->setRunning(running);
     mStatusLabel->setText(running ? tr("Running…") : tr("Stopped"));
     if (running)
-        mInput->setFocus();
+        mView->setFocus();
     emit runStateChanged(running);
 }
